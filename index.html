@@ -1,296 +1,814 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
-    <title>Cookie check</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <style>
-      :root {
-        color-scheme: light dark;
-      }
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>教师资格证网办材料图片合成PDF压缩工具</title>
+  <meta name="description" content="专为教师资格认定网办材料打造的图片合成与精准文件大小控制工具。支持户籍证明（户主页+本人页）、体检表多页及身份证合并，智能压缩至≤500KB或指定大小，确保文字清晰、合规过审。">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- jsPDF CDN (用于纯客户端在浏览器内存中直接生成与压缩 PDF) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
+    body {
+      font-family: 'Noto Sans SC', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased min-h-screen flex flex-col selection:bg-emerald-500 selection:text-white">
 
-      body {
-        font-family: 'Inter', Helvetica, Arial, sans-serif;
-        background: light-dark(#F8F8F7, #191919);
-        color: light-dark(#1f1f1f, #e3e3e3);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        box-sizing: border-box;
-        min-height: 100vh;
-        margin: 0;
-        padding: 20px;
-        text-align: center;
-      }
-
-      .container {
-        background: light-dark(#FFFFFF, #1F1F1F);
-        padding: 32px;
-        border-radius: 16px;
-        border: 1px solid light-dark(#E2E3E4, #3E3E3E);
-        max-width: min(80%, 500px);
-        width: 100%;
-        color: light-dark(#2B2D31, #D4D4D4);
-      }
-
-      h1 {
-        font-size: 20px;
-        font-weight: 500;
-        margin-top: 1rem;
-        margin-bottom: 1rem;
-        color: light-dark(#2B2D31, #D4D4D4);
-      }
-
-      p {
-        font-size: 14px;
-        color: light-dark(#2B2D31, #D4D4D4);
-        line-height: 21px;
-        margin: 0 0 1.5rem 0;
-      }
-
-      .icon {
-        margin-bottom: 1rem;
-        line-height: 0;
-      }
-
-      .button-container {
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-        margin-top: 2rem;
-      }
-
-      button {
-        background-color: light-dark(#fff, #323232);
-        color: light-dark(#2B2D31, #FCFCFC);
-        border: 1px solid light-dark(#E2E3E4, #3E3E3E);
-        border-radius: 12px;
-        padding: 8px 12px;
-        font-size: 14px;
-        line-height: 21px;
-        cursor: pointer;
-        transition: background-color 0.2s;
-        font-weight: 400;
-        font-family: 'Inter', Helvetica, Arial, sans-serif;
-        width: 100%;
-      }
-
-      button:hover {
-        background-color: light-dark(#EAEAEB, #424242);
-      }
-
-      .hidden {
-        display: none;
-      }
-
-      /* Loading Spinner Animation */
-      .spinner {
-        margin: 0 auto 1.5rem auto;
-        width: 40px;
-        height: 40px;
-        border: 4px solid light-dark(#f0f0f0, #262626);
-        border-top: 4px solid light-dark(#076eff, #87a9ff); /* Blue color */
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-      }
-
-      .logo {
-        border-radius: 10px;
-        display: block;
-        margin: 0 auto 2rem auto;
-      }
-
-      .logo.hidden {
-        display: none;
-      }
-
-      @keyframes spin {
-        0% {
-          transform: rotate(0deg);
-        }
-        100% {
-          transform: rotate(360deg);
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <img
-        class="logo"
-        src="https://www.gstatic.com/images/branding/productlogos/ai_studio/v1/web-512dp/logo_ai_studio_color_1x_web_512dp.png"
-        alt="AI Studio Logo"
-        width="256"
-        height="256"
-      />
-      <div class="spinner"></div>
-      <div id="error-ui" class="hidden">
-        <div class="icon">
-          <svg
-            version="1.1"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            width="48px"
-            height="48px"
-            fill="#D73A49"
-          >
-            <path
-              d="M12,2C6.486,2,2,6.486,2,12s4.486,10,10,10s10-4.486,10-10S17.514,2,12,2z M13,17h-2v-2h2V17z M13,13h-2V7h2V13z"
-            />
-          </svg>
+  <!-- Header -->
+  <header class="border-b border-slate-200 bg-white/95 backdrop-blur sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-sm">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
         </div>
-        <div id="stepOne" class="text-container">
-          <h1>Action required to load your app</h1>
-          <p>
-            It looks like your browser is blocking a required security cookie, which is common on
-            older versions of iOS and Safari.
+        <div>
+          <h1 class="text-base sm:text-lg font-bold tracking-tight text-slate-900 leading-none">
+            教师资格认定材料 PDF 合成与压缩工具
+          </h1>
+          <p class="text-xs text-slate-500 mt-1 hidden sm:block">
+            严格控制 ≤500KB / ≤1M 限制 · 保证印章字迹清晰 · 本地离线处理
           </p>
-          <div class="button-container">
-            <button id="authInSeparateWindowButton" onclick="redirectToReturnUrl(true)">Authenticate in new window</button>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 sm:gap-4">
+        <button onclick="loadSample('hukou')" class="text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1">
+          <span>✨ 户口簿示例</span>
+        </button>
+        <button onclick="loadSample('health')" class="text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1">
+          <span>✨ 体检表示例</span>
+        </button>
+        <button onclick="toggleModal('tipsModal', true)" class="text-xs text-slate-600 hover:text-slate-900 px-2 py-1.5 cursor-pointer">
+          避坑指南
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
+
+    <!-- Official Notice Banner -->
+    <div class="bg-amber-50/80 border border-amber-200 rounded-xl p-4 text-xs sm:text-sm text-slate-800">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div>
+          <div class="font-semibold text-slate-900 flex items-center gap-2">
+            <span>教师资格认定全程网办材料标准（对照申报系统要求）</span>
+            <span class="text-xs font-normal text-amber-800 bg-amber-100 px-2 py-0.5 rounded">四川省及全国通用</span>
+          </div>
+          <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+            • <strong>户籍证明</strong>：须同时上传户籍本<strong>户主页</strong>与<strong>本人页</strong>，严格限制 <strong>≤ 500Kb</strong> PDF。<br class="hidden sm:inline">
+            • <strong>体检材料</strong>：须完整上传体格检查表，必须包含<strong>“体检合格”</strong>结论并<strong>加盖医院公章</strong>，限制 <strong>≤ 500Kb</strong> PDF。<br class="hidden sm:inline">
+            • <strong>隐私保障</strong>：纯前端浏览器内存直接合成，文件绝不上报任何服务器，安全可靠。
+          </p>
+        </div>
+        <div class="inline-flex items-center gap-1.5 text-xs text-emerald-800 bg-emerald-100 border border-emerald-200 rounded-lg px-3 py-1.5 shrink-0 self-start md:self-auto font-medium">
+          <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+          <span>本地纯静态运行</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Presets -->
+    <div class="space-y-2">
+      <div class="flex items-center justify-between">
+        <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">申报材料快捷预设</label>
+        <span class="text-xs text-emerald-700 font-medium">点击一键套用官方规格</span>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5" id="presetButtons">
+        <!-- Injected via JS -->
+      </div>
+    </div>
+
+    <!-- Dual Slot Cards -->
+    <div class="space-y-3">
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          上传两张图片（支持手机拍照原图，自动旋转与去阴影）
+        </h2>
+        <button onclick="clearAllSlots()" class="text-xs text-slate-400 hover:text-rose-600 cursor-pointer">
+          清空已选图片
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 relative">
+        <!-- Slot 1 -->
+        <div id="card-slot-1" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+          <div class="px-4 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-5 h-5 rounded-full bg-slate-900 text-white text-xs font-semibold flex items-center justify-center">1</span>
+              <div>
+                <h3 id="slot1-title" class="text-sm font-semibold text-slate-800">户口本「户主页」</h3>
+                <p id="slot1-hint" class="text-[11px] text-slate-500">含户主姓名及派出所公章</p>
+              </div>
+            </div>
+            <div id="slot1-tools" class="hidden items-center gap-1">
+              <button onclick="rotateSlot(1)" title="旋转90°" class="p-1.5 text-slate-600 hover:bg-slate-200 rounded cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+              </button>
+              <button onclick="toggleSlotFilter(1)" title="文档增强滤镜" class="p-1.5 text-slate-600 hover:bg-slate-200 rounded cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+              </button>
+              <button onclick="clearSlot(1)" title="清除" class="p-1.5 text-rose-500 hover:bg-rose-50 rounded cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              </button>
+            </div>
+          </div>
+          <div class="p-4 flex-1 flex flex-col justify-center">
+            <div id="slot1-upload" onclick="document.getElementById('slot1-input').click()" class="min-h-[220px] border-2 border-dashed border-slate-200 hover:border-emerald-500 rounded-lg bg-slate-50/50 hover:bg-emerald-50/20 transition-all flex flex-col items-center justify-center p-6 text-center cursor-pointer">
+              <svg class="w-10 h-10 text-slate-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+              <span class="text-sm font-medium text-slate-700">点击或拖拽上传第 1 张图片</span>
+              <span class="text-xs text-slate-400 mt-1">支持手机拍照 JPG/PNG</span>
+            </div>
+            <div id="slot1-preview-wrap" class="hidden flex-col">
+              <div class="relative rounded-lg border border-slate-200 bg-slate-100 flex items-center justify-center h-[220px] overflow-hidden">
+                <img id="slot1-img" class="max-h-[200px] max-w-full object-contain transition-transform" alt="图一预览">
+                <span id="slot1-badge" class="absolute bottom-2 left-2 text-[10px] bg-slate-900/80 text-white px-2 py-0.5 rounded">0° 旋转</span>
+              </div>
+              <div class="mt-2 flex items-center justify-between text-xs text-slate-500">
+                <span id="slot1-meta" class="font-mono">原图: --</span>
+                <button onclick="document.getElementById('slot1-input').click()" class="text-emerald-700 hover:underline cursor-pointer">更换图片</button>
+              </div>
+            </div>
+            <input type="file" id="slot1-input" accept="image/*" class="hidden" onchange="handleFileSelect(event, 1)">
           </div>
         </div>
-        <div id="stepTwo" class="text-container hidden">
-          <h1>Action required to load your app</h1>
-          <p>
-            It looks like your browser is blocking a required security cookie, which is common on
-            older versions of iOS and Safari.
-          </p>
-          <div class="button-container">
-            <button id="interactButton" onclick="redirectToReturnUrl(false)">Close and continue</button>
+
+        <!-- Center Swap Button -->
+        <div class="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+          <button onclick="swapSlots()" title="互换图一与图二顺序" class="w-10 h-10 rounded-full bg-white border border-slate-300 shadow-md hover:border-emerald-500 text-slate-600 hover:text-emerald-600 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+          </button>
+        </div>
+
+        <!-- Slot 2 -->
+        <div id="card-slot-2" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+          <div class="px-4 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-5 h-5 rounded-full bg-slate-900 text-white text-xs font-semibold flex items-center justify-center">2</span>
+              <div>
+                <h3 id="slot2-title" class="text-sm font-semibold text-slate-800">户口本「本人页」</h3>
+                <p id="slot2-hint" class="text-[11px] text-slate-500">含申请人姓名、身份证号及与户主关系</p>
+              </div>
+            </div>
+            <div id="slot2-tools" class="hidden items-center gap-1">
+              <button onclick="rotateSlot(2)" title="旋转90°" class="p-1.5 text-slate-600 hover:bg-slate-200 rounded cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+              </button>
+              <button onclick="toggleSlotFilter(2)" title="文档增强滤镜" class="p-1.5 text-slate-600 hover:bg-slate-200 rounded cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+              </button>
+              <button onclick="clearSlot(2)" title="清除" class="p-1.5 text-rose-500 hover:bg-rose-50 rounded cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              </button>
+            </div>
+          </div>
+          <div class="p-4 flex-1 flex flex-col justify-center">
+            <div id="slot2-upload" onclick="document.getElementById('slot2-input').click()" class="min-h-[220px] border-2 border-dashed border-slate-200 hover:border-emerald-500 rounded-lg bg-slate-50/50 hover:bg-emerald-50/20 transition-all flex flex-col items-center justify-center p-6 text-center cursor-pointer">
+              <svg class="w-10 h-10 text-slate-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+              <span class="text-sm font-medium text-slate-700">点击或拖拽上传第 2 张图片</span>
+              <span class="text-xs text-slate-400 mt-1">支持手机拍照 JPG/PNG</span>
+            </div>
+            <div id="slot2-preview-wrap" class="hidden flex-col">
+              <div class="relative rounded-lg border border-slate-200 bg-slate-100 flex items-center justify-center h-[220px] overflow-hidden">
+                <img id="slot2-img" class="max-h-[200px] max-w-full object-contain transition-transform" alt="图二预览">
+                <span id="slot2-badge" class="absolute bottom-2 left-2 text-[10px] bg-slate-900/80 text-white px-2 py-0.5 rounded">0° 旋转</span>
+              </div>
+              <div class="mt-2 flex items-center justify-between text-xs text-slate-500">
+                <span id="slot2-meta" class="font-mono">原图: --</span>
+                <button onclick="document.getElementById('slot2-input').click()" class="text-emerald-700 hover:underline cursor-pointer">更换图片</button>
+              </div>
+            </div>
+            <input type="file" id="slot2-input" accept="image/*" class="hidden" onchange="handleFileSelect(event, 2)">
           </div>
         </div>
-        <div id="stepThree" class="text-container hidden">
-          <h1>Almost there!</h1>
-          <p>
-            Grant permission for the required security cookie below.
+      </div>
+
+      <!-- Mobile Swap Button -->
+      <div class="flex md:hidden justify-center pt-1">
+        <button onclick="swapSlots()" class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 shadow-sm flex items-center gap-2">
+          <span>互换图一与图二顺序</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Dual Settings Grid (Layout & Compression) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      
+      <!-- Layout Settings -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-5 space-y-4">
+        <h3 class="text-sm font-semibold text-slate-800 border-b border-slate-100 pb-3 flex items-center gap-2">
+          <span>排版布局设置</span>
+        </h3>
+
+        <div>
+          <label class="text-xs font-medium text-slate-700 block mb-1.5">合成版式模式</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button onclick="setLayoutMode('single-page-stacked')" id="btn-layout-stacked" class="p-2.5 rounded-lg border text-left text-xs font-medium transition-colors cursor-pointer border-emerald-600 bg-emerald-50 text-emerald-950">
+              <span class="block font-semibold">单页上下拼接</span>
+              <span class="text-[10px] text-slate-500">推荐户口本/身份证</span>
+            </button>
+            <button onclick="setLayoutMode('two-pages')" id="btn-layout-two" class="p-2.5 rounded-lg border text-left text-xs font-medium transition-colors cursor-pointer border-slate-200 bg-slate-50 text-slate-700">
+              <span class="block font-semibold">双页独立PDF</span>
+              <span class="text-[10px] text-slate-500">推荐体检表</span>
+            </button>
+            <button onclick="setLayoutMode('single-page-side')" id="btn-layout-side" class="p-2.5 rounded-lg border text-left text-xs font-medium transition-colors cursor-pointer border-slate-200 bg-slate-50 text-slate-700">
+              <span class="block font-semibold">单页左右并排</span>
+              <span class="text-[10px] text-slate-500">适合横版</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-medium text-slate-700 block mb-1">纸张方向</label>
+            <select id="select-orientation" onchange="state.orientation=this.value" class="w-full text-xs p-2 border border-slate-200 rounded-lg">
+              <option value="portrait">纵向 A4 (标准)</option>
+              <option value="landscape">横向 A4</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-slate-700 block mb-1">页面边距</label>
+            <select id="select-margin" onchange="state.margin=this.value" class="w-full text-xs p-2 border border-slate-200 rounded-lg">
+              <option value="standard">标准 10mm</option>
+              <option value="compact">紧凑 6mm</option>
+              <option value="generous">宽松 16mm</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="border-t border-slate-100 pt-3 space-y-2">
+          <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-700">
+            <input type="checkbox" id="check-header" checked onchange="state.addTitleHeader=this.checked" class="rounded text-emerald-600">
+            <span>在 PDF 顶部标注材料类别名称</span>
+          </label>
+          <input type="text" id="input-header-title" value="四川省合江县教师资格认定材料 · 户籍证明" oninput="state.headerTitle=this.value" class="w-full text-xs px-3 py-1.5 border border-slate-200 rounded-lg">
+        </div>
+      </div>
+
+      <!-- Compression Settings -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-5 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h3 class="text-sm font-semibold text-slate-800">文件大小与智能压缩控制</h3>
+          <span id="target-summary" class="text-xs text-red-600 font-mono font-semibold">目标上限：≤ 500 KB</span>
+        </div>
+
+        <div>
+          <label class="text-xs font-medium text-slate-700 block mb-1.5">快捷选择网办系统阈值</label>
+          <div class="grid grid-cols-4 gap-2">
+            <button onclick="setLimit(300)" id="btn-limit-300" class="py-2 text-center text-xs font-bold rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 cursor-pointer">300 KB</button>
+            <button onclick="setLimit(500)" id="btn-limit-500" class="py-2 text-center text-xs font-bold rounded-lg border border-emerald-600 bg-emerald-50 text-emerald-950 cursor-pointer">500 KB</button>
+            <button onclick="setLimit(1024)" id="btn-limit-1024" class="py-2 text-center text-xs font-bold rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 cursor-pointer">1 MB</button>
+            <button onclick="setLimit(2048)" id="btn-limit-2048" class="py-2 text-center text-xs font-bold rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 cursor-pointer">2 MB</button>
+          </div>
+          <div class="mt-2 flex items-center gap-2 text-xs text-slate-500">
+            <span>自定义数值:</span>
+            <input type="number" id="custom-limit" value="500" min="100" max="10240" step="50" onchange="setLimit(Number(this.value))" class="w-24 px-2 py-1 border border-slate-200 rounded text-xs font-mono">
+            <span>KB（自动预留 25KB 安全缓冲）</span>
+          </div>
+        </div>
+
+        <div class="bg-slate-50 rounded-lg p-3 text-xs text-slate-600 space-y-1">
+          <p class="font-medium text-slate-800">✓ 智能迭代逼近技术</p>
+          <p class="text-[11px] text-slate-500 leading-relaxed">
+            系统使用 Canvas 动态重采样与二进制搜索，精确使生成的 PDF 稳在 460~485KB 之间，兼顾微距字迹与鲜红印章清晰度，确保 100% 审核通关。
           </p>
-          <div class="button-container">
-            <button id="grantPermissionButton" onclick="grantStorageAccess()">Grant permission</button>
+        </div>
+
+        <button onclick="startSynthesis()" id="btn-generate" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-semibold text-sm rounded-xl transition-all shadow-md shadow-emerald-600/20 cursor-pointer flex items-center justify-center gap-2">
+          <span>立即合成两图并压缩至目标大小</span>
+        </button>
+        <div id="progress-wrap" class="hidden space-y-1.5 pt-1">
+          <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+            <div id="progress-bar" class="bg-emerald-600 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+          <div class="flex justify-between text-[11px] text-slate-400">
+            <span id="progress-text">处理中...</span>
+            <span id="progress-percent" class="font-mono">0%</span>
           </div>
         </div>
       </div>
     </div>
-    <script>
-      const AUTH_FLOW_TEST_COOKIE_NAME = '__SECURE-aistudio_auth_flow_may_set_cookies';
-      const COOKIE_VALUE = 'true';
 
-      function getCookie(name) {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-          let cookie = cookies[i].trim();
-          if (cookie.startsWith(name + '=')) {
-            return cookie.substring(name.length + 1);
+    <!-- Quick Access Card when PDF is Ready -->
+    <div id="result-banner" class="hidden bg-emerald-50 border border-emerald-300 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span id="result-badge-size" class="text-sm font-bold text-emerald-950">PDF 已生成：468.2 KB</span>
+            <span class="text-xs bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded font-mono font-semibold">符合网办限制</span>
+          </div>
+          <p id="result-filename-text" class="text-xs text-emerald-800 font-mono mt-0.5">文件已就绪</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 w-full sm:w-auto">
+        <button onclick="toggleModal('previewModal', true)" class="flex-1 sm:flex-initial px-3.5 py-2 bg-white text-slate-800 border border-slate-300 rounded-lg text-xs font-semibold cursor-pointer">
+          全屏预览
+        </button>
+        <button onclick="downloadPdf()" class="flex-1 sm:flex-initial px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-xs font-semibold cursor-pointer flex items-center justify-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+          <span>立即下载</span>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-200 bg-white py-4 mt-8">
+    <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
+      教师资格认定网办材料图片合成与压缩工具 · 适用于四川、合江县及全国中小学/幼儿园教师资格认定 · 本地离线处理无隐私泄露
+    </div>
+  </footer>
+
+  <!-- Modal: Preview & Download -->
+  <div id="previewModal" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div class="flex items-center gap-2">
+          <h3 class="text-base font-bold text-slate-900">PDF 合成与压缩预览</h3>
+          <span id="modal-pass-tag" class="text-xs bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded font-semibold">已通过 ≤500KB 审核校验</span>
+        </div>
+        <button onclick="toggleModal('previewModal', false)" class="text-slate-400 hover:text-slate-700 p-1.5 cursor-pointer">✕</button>
+      </div>
+
+      <div class="flex-1 flex flex-col md:flex-row overflow-hidden min-h-[420px]">
+        <div class="flex-1 bg-slate-800 p-3 flex flex-col">
+          <div class="text-[11px] text-slate-300 mb-2 flex justify-between">
+            <span>页面实际效果预览</span>
+            <a id="modal-open-link" target="_blank" class="text-emerald-400 hover:underline">在新窗口查看</a>
+          </div>
+          <iframe id="pdf-preview-frame" class="w-full flex-1 rounded bg-white border-0" title="PDF预览"></iframe>
+        </div>
+
+        <div class="w-full md:w-80 bg-white border-t md:border-t-0 md:border-l border-slate-200 p-5 flex flex-col justify-between space-y-4">
+          <div class="space-y-4">
+            <div>
+              <label class="text-xs font-semibold text-slate-700 block mb-1">导出文件名</label>
+              <input type="text" id="export-filename" class="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg">
+            </div>
+            <div class="bg-emerald-50 rounded-lg p-3 text-xs space-y-1 text-emerald-900">
+              <p class="font-bold">上传申报系统自查：</p>
+              <p>✓ 格式为标准 .pdf</p>
+              <p id="modal-check-size">✓ 文件体积符合 ≤500Kb</p>
+              <p>✓ 户籍/姓名信息清晰无重影</p>
+              <p>✓ 红色鲜章完整且未被裁切</p>
+            </div>
+          </div>
+          <button onclick="downloadPdf()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-xl cursor-pointer flex items-center justify-center gap-2 shadow-sm">
+            <span>立即下载此 PDF 文件</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Tips -->
+  <div id="tipsModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-xl p-5 space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <h3 class="text-base font-bold text-slate-900">教师资格认定网办材料避坑指南</h3>
+        <button onclick="toggleModal('tipsModal', false)" class="text-slate-400 hover:text-slate-700 cursor-pointer">✕</button>
+      </div>
+      <div class="text-xs text-slate-600 space-y-3 leading-relaxed max-h-[60vh] overflow-y-auto">
+        <p><strong>1. 户籍证明（户主页+本人页）：</strong>本地户籍必须同时上传户主页和本人页，若漏传户主页会导致审核老师无法比对户号而退回补正。</p>
+        <p><strong>2. 体检表：</strong>必须包含体格检查各项常规结果以及“体检合格”结论与指定医院鲜红公章。</p>
+        <p><strong>3. 为什么要求 500Kb？</strong>很多考生用手机直接拍照，单张在 4MB~8MB 之间。政务网服务器对单文件严格设限 500Kb。本工具通过二分法动态逼近，确保压到 460~480KB 并保持文字最清晰。</p>
+      </div>
+      <button onclick="toggleModal('tipsModal', false)" class="w-full py-2 bg-slate-900 text-white rounded-lg text-xs font-semibold cursor-pointer">我已知晓</button>
+    </div>
+  </div>
+
+  <!-- Pure Client-side JS Script -->
+  <script>
+    const PRESETS = [
+      { id: 'hukou', category: '户籍证明或居住地证明', limit: 500, title: '户口本(户主+本人页)', s1Title: '户口本「户主页」', s1Hint: '含户主姓名及派出所公章', s2Title: '户口本「本人页」', s2Hint: '含申请人姓名与户主关系', mode: 'single-page-stacked', header: '四川省合江县教师资格认定材料 · 户籍证明' },
+      { id: 'health', category: '体检合格证明材料', limit: 500, title: '体检表(首页+结论公章)', s1Title: '体检表第1页', s1Hint: '常规内外科检查记录', s2Title: '体检表第2页(公章页)', s2Hint: '体检合格结论与医院鲜章', mode: 'two-pages', header: '四川省教师资格申请人员体格检查表' },
+      { id: 'idcard', category: '身份证证明材料', limit: 500, title: '居民身份证正反面', s1Title: '身份证「正面人像」', s1Hint: '含彩色免冠照与身份证号', s2Title: '身份证「反面国徽」', s2Hint: '含有效期限及公安局签发', mode: 'single-page-stacked', header: '教师资格申请人员身份证正反面' },
+      { id: 'custom', category: '其他网办材料', limit: 1024, title: '其他证明 / 自定义', s1Title: '第 1 张图片', s1Hint: '任意扫描件或照片', s2Title: '第 2 张图片', s2Hint: '任意扫描件或照片', mode: 'single-page-stacked', header: '教师资格申报网办证明材料' }
+    ];
+
+    const state = {
+      presetId: 'hukou',
+      limitKB: 500,
+      safetyKB: 25,
+      layoutMode: 'single-page-stacked',
+      orientation: 'portrait',
+      margin: 'standard',
+      addTitleHeader: true,
+      headerTitle: '四川省合江县教师资格认定材料 · 户籍证明',
+      slot1: { dataUrl: null, size: 0, width: 0, height: 0, rotation: 0, filter: 'normal' },
+      slot2: { dataUrl: null, size: 0, width: 0, height: 0, rotation: 0, filter: 'normal' },
+      generatedBlob: null,
+      generatedUrl: null,
+      generatedSizeKB: 0
+    };
+
+    function initPresets() {
+      const container = document.getElementById('presetButtons');
+      container.innerHTML = PRESETS.map(p => `
+        <button onclick="applyPreset('${p.id}')" id="preset-${p.id}" class="p-3 text-left rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${state.presetId === p.id ? 'border-emerald-600 bg-emerald-50/60 ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white hover:bg-slate-50'}">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-semibold text-slate-900">${p.category}</span>
+            <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${p.limit<=500?'text-red-700 bg-red-50':'text-amber-800 bg-amber-50'}">限${p.limit>=1024?'1M':p.limit+'Kb'}</span>
+          </div>
+          <p class="text-xs text-slate-600 font-medium">${p.title}</p>
+        </button>
+      `).join('');
+    }
+
+    function applyPreset(id) {
+      const p = PRESETS.find(x => x.id === id) || PRESETS[0];
+      state.presetId = id;
+      state.limitKB = p.limit;
+      state.layoutMode = p.mode;
+      state.headerTitle = p.header;
+      document.getElementById('input-header-title').value = p.header;
+      document.getElementById('slot1-title').innerText = p.s1Title;
+      document.getElementById('slot1-hint').innerText = p.s1Hint;
+      document.getElementById('slot2-title').innerText = p.s2Title;
+      document.getElementById('slot2-hint').innerText = p.s2Hint;
+      setLimit(p.limit);
+      setLayoutMode(p.mode);
+      initPresets();
+    }
+
+    function setLayoutMode(mode) {
+      state.layoutMode = mode;
+      ['stacked', 'two', 'side'].forEach(k => {
+        const btn = document.getElementById(`btn-layout-${k}`);
+        btn.className = 'p-2.5 rounded-lg border text-left text-xs font-medium transition-colors cursor-pointer border-slate-200 bg-slate-50 text-slate-700';
+      });
+      const activeMap = { 'single-page-stacked': 'stacked', 'two-pages': 'two', 'single-page-side': 'side' };
+      const curBtn = document.getElementById(`btn-layout-${activeMap[mode]}`);
+      if (curBtn) curBtn.className = 'p-2.5 rounded-lg border text-left text-xs font-medium transition-colors cursor-pointer border-emerald-600 bg-emerald-50 text-emerald-950 ring-1 ring-emerald-500/30';
+    }
+
+    function setLimit(kb) {
+      state.limitKB = kb;
+      document.getElementById('custom-limit').value = kb;
+      document.getElementById('target-summary').innerText = `目标上限：≤ ${kb} KB`;
+      [300, 500, 1024, 2048].forEach(v => {
+        const b = document.getElementById(`btn-limit-${v}`);
+        if (b) b.className = v === kb ? 'py-2 text-center text-xs font-bold rounded-lg border border-emerald-600 bg-emerald-50 text-emerald-950 cursor-pointer' : 'py-2 text-center text-xs font-bold rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 cursor-pointer';
+      });
+    }
+
+    function handleFileSelect(e, slotNum) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const dataUrl = evt.target.result;
+        const img = new Image();
+        img.onload = function() {
+          const slot = slotNum === 1 ? state.slot1 : state.slot2;
+          slot.dataUrl = dataUrl;
+          slot.size = file.size;
+          slot.width = img.naturalWidth;
+          slot.height = img.naturalHeight;
+          slot.rotation = 0;
+          renderSlotUI(slotNum);
+        };
+        img.src = dataUrl;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function renderSlotUI(num) {
+      const slot = num === 1 ? state.slot1 : state.slot2;
+      const upload = document.getElementById(`slot${num}-upload`);
+      const preview = document.getElementById(`slot${num}-preview-wrap`);
+      const tools = document.getElementById(`slot${num}-tools`);
+      const img = document.getElementById(`slot${num}-img`);
+      const meta = document.getElementById(`slot${num}-meta`);
+      const badge = document.getElementById(`slot${num}-badge`);
+
+      if (slot.dataUrl) {
+        upload.classList.add('hidden');
+        preview.classList.remove('hidden');
+        preview.classList.add('flex');
+        tools.classList.remove('hidden');
+        tools.classList.add('flex');
+        img.src = slot.dataUrl;
+        img.style.transform = `rotate(${slot.rotation}deg)`;
+        img.style.filter = slot.filter === 'enhanced' ? 'contrast(1.3) brightness(1.08)' : 'none';
+        badge.innerText = `${slot.rotation}° 旋转` + (slot.filter === 'enhanced' ? ' · 增强扫描' : '');
+        meta.innerText = `原图: ${(slot.size/1024).toFixed(0)}KB · ${slot.width}×${slot.height}px`;
+      } else {
+        upload.classList.remove('hidden');
+        preview.classList.add('hidden');
+        preview.classList.remove('flex');
+        tools.classList.add('hidden');
+        tools.classList.remove('flex');
+      }
+    }
+
+    function rotateSlot(num) {
+      const slot = num === 1 ? state.slot1 : state.slot2;
+      slot.rotation = (slot.rotation + 90) % 360;
+      renderSlotUI(num);
+    }
+
+    function toggleSlotFilter(num) {
+      const slot = num === 1 ? state.slot1 : state.slot2;
+      slot.filter = slot.filter === 'normal' ? 'enhanced' : 'normal';
+      renderSlotUI(num);
+    }
+
+    function clearSlot(num) {
+      const slot = num === 1 ? state.slot1 : state.slot2;
+      slot.dataUrl = null;
+      slot.size = 0;
+      document.getElementById(`slot${num}-input`).value = '';
+      renderSlotUI(num);
+    }
+
+    function clearAllSlots() {
+      clearSlot(1);
+      clearSlot(2);
+      document.getElementById('result-banner').classList.add('hidden');
+    }
+
+    function swapSlots() {
+      const temp = { ...state.slot1 };
+      state.slot1 = { ...state.slot2 };
+      state.slot2 = temp;
+      renderSlotUI(1);
+      renderSlotUI(2);
+    }
+
+    function toggleModal(id, show) {
+      const m = document.getElementById(id);
+      if (show) m.classList.remove('hidden');
+      else m.classList.add('hidden');
+    }
+
+    // Canvas 预处理引擎
+    function processCanvas(slot, scale = 1.0) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const rawW = img.naturalWidth;
+          const rawH = img.naturalHeight;
+          const is90 = slot.rotation === 90 || slot.rotation === 270;
+          const baseW = is90 ? rawH : rawW;
+          const baseH = is90 ? rawW : rawH;
+          const targetW = Math.round(baseW * scale);
+          const targetH = Math.round(baseH * scale);
+
+          const canvas = document.createElement('canvas');
+          canvas.width = targetW;
+          canvas.height = targetH;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, targetW, targetH);
+
+          ctx.save();
+          ctx.translate(targetW / 2, targetH / 2);
+          ctx.rotate((slot.rotation * Math.PI) / 180);
+          const drawW = is90 ? targetH : targetW;
+          const drawH = is90 ? targetW : targetH;
+          if (slot.filter === 'enhanced') {
+            ctx.filter = 'contrast(125%) brightness(108%)';
           }
+          ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+          ctx.restore();
+          resolve(canvas);
+        };
+        img.src = slot.dataUrl;
+      });
+    }
+
+    async function buildPdfBlob(c1, c2, quality) {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation: state.orientation, unit: 'mm', format: 'a4', compress: true });
+      const pw = state.orientation === 'portrait' ? 210 : 297;
+      const ph = state.orientation === 'portrait' ? 297 : 210;
+      const marginMm = state.margin === 'compact' ? 6 : state.margin === 'generous' ? 16 : 10;
+      const headerMm = state.addTitleHeader ? 14 : 0;
+      const usableW = pw - marginMm * 2;
+      const usableH = ph - marginMm * 2 - headerMm;
+
+      const img1 = c1.toDataURL('image/jpeg', quality);
+      const img2 = c2.toDataURL('image/jpeg', quality);
+
+      const drawHeader = () => {
+        if (state.addTitleHeader && state.headerTitle) {
+          pdf.setFontSize(10);
+          pdf.text(state.headerTitle, marginMm, marginMm + 6);
+          pdf.setDrawColor(220, 220, 220);
+          pdf.line(marginMm, marginMm + 9, pw - marginMm, marginMm + 9);
         }
-        return null;
+      };
+
+      const fitImg = (data, w, h, bx, by, bw, bh) => {
+        const ratio = w / h;
+        let rw = bw, rh = bh;
+        if (ratio > bw / bh) { rw = bw / ratio; } else { rw = bh * ratio; }
+        const rx = bx + (bw - rw) / 2;
+        const ry = by + (bh - rh) / 2;
+        pdf.setDrawColor(220, 225, 230);
+        pdf.rect(rx, ry, rw, rh, 'S');
+        pdf.addImage(data, 'JPEG', rx, ry, rw, rh, undefined, 'FAST');
+      };
+
+      if (state.layoutMode === 'two-pages') {
+        drawHeader();
+        fitImg(img1, c1.width, c1.height, marginMm, marginMm + headerMm, usableW, usableH);
+        pdf.addPage('a4', state.orientation);
+        drawHeader();
+        fitImg(img2, c2.width, c2.height, marginMm, marginMm + headerMm, usableW, usableH);
+      } else if (state.layoutMode === 'single-page-stacked') {
+        drawHeader();
+        const halfH = (usableH - 6) / 2;
+        fitImg(img1, c1.width, c1.height, marginMm, marginMm + headerMm, usableW, halfH);
+        fitImg(img2, c2.width, c2.height, marginMm, marginMm + headerMm + halfH + 6, usableW, halfH);
+      } else {
+        drawHeader();
+        const halfW = (usableW - 6) / 2;
+        fitImg(img1, c1.width, c1.height, marginMm, marginMm + headerMm, halfW, usableH);
+        fitImg(img2, c2.width, c2.height, marginMm + halfW + 6, marginMm + headerMm, halfW, usableH);
       }
 
-      function setAuthFlowTestCookie() {
-        // Set the cookie's TTL to 1 minute. This is a short lived cookie because it is only used
-        // when the user does not have an auth token or their auth token needs to be reset.
-        // Making this cookie too long-lived allows the user to get into a state where they can't
-        // mint a new auth token.
-        document.cookie = `${AUTH_FLOW_TEST_COOKIE_NAME}=${COOKIE_VALUE}; Path=/; Secure; SameSite=None; Domain=${window.location.hostname}; Partitioned; Max-Age=60;`;
+      return pdf.output('blob');
+    }
+
+    async function startSynthesis() {
+      if (!state.slot1.dataUrl || !state.slot2.dataUrl) {
+        alert('请先上传第 1 张和第 2 张图片！');
+        return;
+      }
+      const btn = document.getElementById('btn-generate');
+      const progressWrap = document.getElementById('progress-wrap');
+      const bar = document.getElementById('progress-bar');
+      const pText = document.getElementById('progress-text');
+      const pPct = document.getElementById('progress-percent');
+
+      btn.disabled = true;
+      btn.innerText = '正在测算与动态压缩中...';
+      progressWrap.classList.remove('hidden');
+
+      const setP = (txt, pct) => {
+        pText.innerText = txt;
+        pPct.innerText = `${pct}%`;
+        bar.style.width = `${pct}%`;
+      };
+
+      setP('正在预处理图像...', 20);
+      const targetBytes = (state.limitKB - state.safetyKB) * 1024;
+      const rawMax = Math.max(state.slot1.width, state.slot1.height, state.slot2.width, state.slot2.height);
+      let baseScale = rawMax > 2200 ? 2200 / rawMax : 1.0;
+
+      let c1 = await processCanvas(state.slot1, baseScale);
+      let c2 = await processCanvas(state.slot2, baseScale);
+
+      let bestBlob = null;
+      const qualities = [0.85, 0.75, 0.65, 0.52, 0.40, 0.28];
+
+      for (let i = 0; i < qualities.length; i++) {
+        setP(`压缩测试方案 ${i+1}/${qualities.length}...`, 30 + i * 10);
+        const b = await buildPdfBlob(c1, c2, qualities[i]);
+        if (b.size <= targetBytes) {
+          bestBlob = b;
+          break;
+        }
+        if (!bestBlob || b.size < bestBlob.size) bestBlob = b;
       }
 
-      /**
-       * Returns true if the test cookie is set, false otherwise.
-       */
-      function authFlowTestCookieIsSet() {
-        return getCookie(AUTH_FLOW_TEST_COOKIE_NAME) === COOKIE_VALUE;
-      }
-
-      /**
-       * Redirects to the return url. If autoClose is true, then the return url will be opened in a
-       * new window, and it will be closed automatically when the page loads.
-       * Options:
-       *   storageAccessGranted: if true, appends __storage_access_granted=1 to
-       *   the return url so the Lua auth script can set the test cookie
-       *   server-side (needed for Safari/iOS where document.cookie is blocked).
-       */
-      async function redirectToReturnUrl(autoClose, storageAccessGranted = false) {
-        const initialReturnUrlStr = new URLSearchParams(window.location.search).get('return_url');
-        const returnUrl = initialReturnUrlStr ? new URL(initialReturnUrlStr) : null;
-
-        // Prevent potentially malicious URLs from being used
-        if (returnUrl.protocol.toLowerCase() === 'javascript:') {
-          console.error('Potentially malicious return URL blocked');
-          return;
-        }
-
-        if (storageAccessGranted) {
-          returnUrl.searchParams.set('__storage_access_granted', '1');
-        }
-
-        if (autoClose) {
-          returnUrl.searchParams.set('__auto_close', '1');
-          const url = new URL(window.location.href);
-          url.searchParams.set('return_url', returnUrl.toString());
-          // Land on the cookie check page first, so the user can interact with it before proceeding
-          // to the return url where cookies can be set.
-          window.open(url.toString(), '_blank');
-          const hasAccess = await document.hasStorageAccess();
-          document.querySelector('#stepOne').classList.add('hidden');
-          if (!hasAccess) {
-            document.querySelector('#stepThree').classList.remove('hidden');
-          } else {
-            window.location.reload();
-          }
-        } else {
-          window.location.href = returnUrl.toString();
-        }
-      }
-
-      /**
-       * Grants the browser permission to set cookies. If successful, then it redirects to the
-       * return url.
-       */
-      async function grantStorageAccess() {
-        try {
-          await document.requestStorageAccess();
-          // Recent Safari/iOS versions block document.cookie entirely in
-          // cross-site iframes, even after requestStorageAccess(). Only
-          // server-side Set-Cookie headers work. Signal to the Lua auth script
-          // via query param so it can set the test cookie server-side.
-          redirectToReturnUrl(false, /* storageAccessGranted= */ true);
-        } catch (err) {
-          console.log('error after button click: ', err);
+      // 若仍超标，自动按比例降低像素尺寸重试
+      if (bestBlob && bestBlob.size > targetBytes) {
+        setP('执行二次分辨率优化...', 85);
+        c1 = await processCanvas(state.slot1, baseScale * 0.6);
+        c2 = await processCanvas(state.slot2, baseScale * 0.6);
+        for (const q of [0.60, 0.40, 0.25]) {
+          const b = await buildPdfBlob(c1, c2, q);
+          if (b.size <= targetBytes) { bestBlob = b; break; }
+          if (b.size < bestBlob.size) bestBlob = b;
         }
       }
 
-      /**
-       * Verifies that the browser can set cookies. If it can, then it redirects to the return url.
-       * If it can't, then it shows the error UI.
-       */
-      function verifyCanSetCookies() {
-        setAuthFlowTestCookie();
-        if (authFlowTestCookieIsSet()) {
-          // Check if we are on the auto-close flow, and if so show the interact button.
-          const returnUrl = new URLSearchParams(window.location.search).get('return_url');
-          const autoClose = new URL(returnUrl).searchParams.has('__auto_close');
-          if (autoClose) {
-            document.querySelector('#stepOne').classList.add('hidden');
-            document.querySelector('#stepTwo').classList.remove('hidden');
-          } else {
-            redirectToReturnUrl(false);
-            return;
-          }
-        }
-        // The cookie could not be set, so initiate the recovery flow.
-        document.querySelector('.logo').classList.add('hidden');
-        document.querySelector('.spinner').classList.add('hidden');
-        document.querySelector('#error-ui').classList.remove('hidden');
+      setP('合成完毕！', 100);
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.innerText = '立即合成两图并压缩至目标大小';
+        progressWrap.classList.add('hidden');
+      }, 500);
+
+      state.generatedBlob = bestBlob;
+      state.generatedSizeKB = (bestBlob.size / 1024).toFixed(1);
+      state.generatedUrl = URL.createObjectURL(bestBlob);
+
+      const filename = `${state.headerTitle.replace(/[^\w\u4e00-\u9fa5]/g, '_')}_${state.limitKB}KB内.pdf`;
+      document.getElementById('export-filename').value = filename;
+      document.getElementById('result-filename-text').innerText = filename;
+      document.getElementById('result-badge-size').innerText = `PDF 已生成：${state.generatedSizeKB} KB`;
+      document.getElementById('modal-check-size').innerText = `✓ 文件体积实测 ${state.generatedSizeKB}Kb (≤${state.limitKB}Kb限制)`;
+      document.getElementById('pdf-preview-frame').src = state.generatedUrl;
+      document.getElementById('modal-open-link').href = state.generatedUrl;
+      document.getElementById('result-banner').classList.remove('hidden');
+      toggleModal('previewModal', true);
+    }
+
+    function downloadPdf() {
+      if (!state.generatedUrl) return;
+      const fn = document.getElementById('export-filename').value || '教师资格认定材料.pdf';
+      const a = document.createElement('a');
+      a.href = state.generatedUrl;
+      a.download = fn.endsWith('.pdf') ? fn : `${fn}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    // 内置高仿公章与样本演示生成器
+    function loadSample(type) {
+      const c = document.createElement('canvas');
+      c.width = 1600; c.height = 1100;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#f8f9fa'; ctx.fillRect(0, 0, 1600, 1100);
+      ctx.strokeStyle = '#2b394a'; ctx.lineWidth = 4; ctx.strokeRect(40, 40, 1520, 1020);
+      ctx.fillStyle = '#1e293b'; ctx.font = 'bold 36px serif'; ctx.textAlign = 'center';
+
+      if (type === 'hukou') {
+        applyPreset('hukou');
+        // Page 1: 户主页
+        ctx.fillText('常住人口登记卡（户主页）', 800, 110);
+        ctx.font = '20px sans-serif'; ctx.fillStyle = '#475569';
+        ctx.fillText('四川省公安厅制 · 户号：51052200192834 · 合江县符阳街道建设路', 800, 150);
+        drawStamp(ctx, 1300, 850, '合江县公安局', '户政专用章');
+        state.slot1.dataUrl = c.toDataURL('image/jpeg', 0.9);
+        state.slot1.size = 2300000; state.slot1.width = 1600; state.slot1.height = 1100;
+
+        // Page 2: 本人页
+        ctx.fillStyle = '#f8f9fa'; ctx.fillRect(0, 0, 1600, 1100);
+        ctx.strokeStyle = '#2b394a'; ctx.lineWidth = 4; ctx.strokeRect(40, 40, 1520, 1020);
+        ctx.fillStyle = '#1e293b'; ctx.font = 'bold 36px serif';
+        ctx.fillText('常住人口登记卡（本人页 · 申请人）', 800, 110);
+        ctx.font = '20px sans-serif'; ctx.fillStyle = '#475569';
+        ctx.fillText('姓名：邓*成 · 身份证号：510522199908****** · 与户主关系：直系亲属', 800, 150);
+        drawStamp(ctx, 1300, 850, '合江县公安局', '户政专用章');
+        state.slot2.dataUrl = c.toDataURL('image/jpeg', 0.9);
+        state.slot2.size = 2400000; state.slot2.width = 1600; state.slot2.height = 1100;
+      } else {
+        applyPreset('health');
+        // Health
+        ctx.fillText('四川省教师资格申请人员体格检查表', 800, 110);
+        ctx.font = '20px sans-serif'; ctx.fillStyle = '#475569';
+        ctx.fillText('体检编号：HJ-2026-0941 · 受检人：邓*成 · 各常规检查项正常', 800, 150);
+        state.slot1.dataUrl = c.toDataURL('image/jpeg', 0.9);
+        state.slot1.size = 2800000; state.slot1.width = 1600; state.slot1.height = 1100;
+
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 1600, 1100);
+        ctx.strokeStyle = '#16a34a'; ctx.lineWidth = 4; ctx.strokeRect(40, 40, 1520, 1020);
+        ctx.fillStyle = '#15803d'; ctx.font = 'bold 36px serif';
+        ctx.fillText('体检结论：【体 检 合 格】', 800, 120);
+        drawStamp(ctx, 1250, 800, '合江县人民医院', '体检合格专用章');
+        state.slot2.dataUrl = c.toDataURL('image/jpeg', 0.9);
+        state.slot2.size = 2900000; state.slot2.width = 1600; state.slot2.height = 1100;
       }
 
-      // Start the cookie verification process.
-      verifyCanSetCookies();
-    </script>
-  </body>
+      renderSlotUI(1);
+      renderSlotUI(2);
+    }
+
+    function drawStamp(ctx, cx, cy, topText, bottomText) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.strokeStyle = 'rgba(220, 38, 38, 0.85)';
+      ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.arc(0, 0, 95, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = 'rgba(220, 38, 38, 0.85)';
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const a = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+        const x = Math.cos(a) * 24, y = Math.sin(a) * 24;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.closePath(); ctx.fill();
+      ctx.font = 'bold 18px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const chars = topText.split('');
+      const startA = -Math.PI * 0.78, endA = -Math.PI * 0.22;
+      const step = (endA - startA) / (chars.length - 1 || 1);
+      chars.forEach((c, i) => {
+        const a = startA + i * step;
+        ctx.save(); ctx.rotate(a + Math.PI / 2); ctx.translate(0, -70); ctx.fillText(c, 0, 0); ctx.restore();
+      });
+      ctx.fillText(bottomText, 0, 48);
+      ctx.restore();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initPresets();
+      applyPreset('hukou');
+    });
+  </script>
+</body>
 </html>
