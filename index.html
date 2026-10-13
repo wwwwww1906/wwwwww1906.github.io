@@ -1348,17 +1348,67 @@
     let oilLoaded = false;
     let oilData = [];
 
-    const OIL_WINDOWS = ['2026-01-06', '2026-01-20', '2026-02-03', '2026-02-24', '2026-03-09', '2026-03-23', '2026-04-07', '2026-04-21', '2026-05-08', '2026-05-21', '2026-06-04', '2026-06-18', '2026-07-03', '2026-07-17', '2026-07-31', '2026-08-14', '2026-08-28', '2026-09-11', '2026-09-24', '2026-10-15', '2026-10-29', '2026-11-12', '2026-11-26', '2026-12-10', '2026-12-24'];
+    let oilHoliday = null;
 
-    function nextOilAdjust() {
-      const n = new Date();
-      const today = new Date(n.getFullYear(), n.getMonth(), n.getDate()).getTime();
-      for (const s of OIL_WINDOWS) {
-        const p = s.split('-');
-        const d = new Date(+p[0], +p[1] - 1, +p[2]).getTime();
-        if (d >= today) return (+p[1]) + '月' + (+p[2]) + '日';
+    function dateStr(d) {
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return d.getFullYear() + '-' + m + '-' + dd;
+    }
+
+    async function loadOilHoliday() {
+      if (oilHoliday) return oilHoliday;
+      const holidays = new Set();
+      const workdays = new Set();
+      const y = new Date().getFullYear();
+      const res = await Promise.allSettled([y, y + 1].map((yr) =>
+        fetchWithTimeout('https://timor.tech/api/holiday/year/' + yr, 8000).then((r) => r.json())
+      ));
+      for (const r of res) {
+        if (r.status !== 'fulfilled' || !r.value || !r.value.holiday) continue;
+        for (const k in r.value.holiday) {
+          const it = r.value.holiday[k];
+          if (it.holiday) holidays.add(it.date); else workdays.add(it.date);
+        }
       }
-      return '待公布';
+      oilHoliday = { holidays, workdays };
+      return oilHoliday;
+    }
+
+    function isWorkday(d, hol) {
+      const s = dateStr(d);
+      if (hol.workdays.has(s)) return true;
+      if (hol.holidays.has(s)) return false;
+      const w = d.getDay();
+      return w >= 1 && w <= 5;
+    }
+
+    function addWorkdays(d, n, hol) {
+      const r = new Date(d.getTime());
+      let c = 0;
+      while (c < n) {
+        r.setDate(r.getDate() + 1);
+        if (isWorkday(r, hol)) c++;
+      }
+      return r;
+    }
+
+    async function nextOilAdjust(anchor) {
+      try {
+        const hol = await loadOilHoliday();
+        if (!anchor) return '待公布';
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        let w = new Date(anchor.getTime());
+        w.setHours(0, 0, 0, 0);
+        let guard = 0;
+        while (w.getTime() < today.getTime() && guard++ < 60) {
+          w = addWorkdays(w, 10, hol);
+        }
+        return (w.getMonth() + 1) + '月' + w.getDate() + '日';
+      } catch (e) {
+        return '待公布';
+      }
     }
 
     async function fetchOil() {
@@ -1424,7 +1474,14 @@
           fillOilRegionSelect();
           renderOilRegion();
           renderOilTable();
-          setText('oil-last-update', '更新于 ' + fmtTime() + ' · 下次调价 ' + nextOilAdjust());
+          let anchor = null;
+          const ds = oilData[0] && oilData[0].date;
+          if (ds && /^\d{4}-\d{2}-\d{2}$/.test(ds)) {
+            anchor = new Date(ds + 'T00:00:00');
+            anchor.setDate(anchor.getDate() - 1);
+          }
+          const next = await nextOilAdjust(anchor);
+          setText('oil-last-update', '更新于 ' + fmtTime() + ' · 下次调价 ' + next);
         } else {
           setText('oil-last-update', '获取失败，请点击刷新重试');
         }
