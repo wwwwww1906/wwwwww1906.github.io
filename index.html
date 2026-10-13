@@ -1348,6 +1348,19 @@
     let oilLoaded = false;
     let oilData = [];
 
+    const OIL_WINDOWS = ['2026-01-06', '2026-01-20', '2026-02-03', '2026-02-24', '2026-03-09', '2026-03-23', '2026-04-07', '2026-04-21', '2026-05-08', '2026-05-21', '2026-06-04', '2026-06-18', '2026-07-03', '2026-07-17', '2026-07-31', '2026-08-14', '2026-08-28', '2026-09-11', '2026-09-24', '2026-10-15', '2026-10-29', '2026-11-12', '2026-11-26', '2026-12-10', '2026-12-24'];
+
+    function nextOilAdjust() {
+      const n = new Date();
+      const today = new Date(n.getFullYear(), n.getMonth(), n.getDate()).getTime();
+      for (const s of OIL_WINDOWS) {
+        const p = s.split('-');
+        const d = new Date(+p[0], +p[1] - 1, +p[2]).getTime();
+        if (d >= today) return (+p[1]) + '月' + (+p[2]) + '日';
+      }
+      return '待公布';
+    }
+
     async function fetchOil() {
       const r = await fetch('https://v2.xxapi.cn/api/oilPrice');
       const j = await r.json();
@@ -1411,7 +1424,7 @@
           fillOilRegionSelect();
           renderOilRegion();
           renderOilTable();
-          setText('oil-last-update', '更新于 ' + fmtTime());
+          setText('oil-last-update', '更新于 ' + fmtTime() + ' · 下次调价 ' + nextOilAdjust());
         } else {
           setText('oil-last-update', '获取失败，请点击刷新重试');
         }
