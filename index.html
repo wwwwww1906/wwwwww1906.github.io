@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>教师资格证网办材料图片合成PDF压缩工具</title>
   <meta name="description" content="专为教师资格认定网办材料打造的图片合成与精准文件大小控制工具。支持户籍证明（户主页+本人页）、体检表多页及身份证合并，智能压缩至≤500KB或指定大小，确保文字清晰、合规过审。">
-  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- jsPDF CDN (用于纯客户端在浏览器内存中直接生成与压缩 PDF) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -18,7 +17,6 @@
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased min-h-screen flex flex-col selection:bg-emerald-500 selection:text-white">
 
-  <!-- Header -->
   <header class="border-b border-slate-200 bg-white/95 backdrop-blur sticky top-0 z-30">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center gap-3">
@@ -49,10 +47,8 @@
     </div>
   </header>
 
-  <!-- Main Container -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
 
-    <!-- Official Notice Banner -->
     <div class="bg-amber-50/80 border border-amber-200 rounded-xl p-4 text-xs sm:text-sm text-slate-800">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
@@ -73,7 +69,6 @@
       </div>
     </div>
 
-    <!-- Presets -->
     <div class="space-y-2">
       <div class="flex items-center justify-between">
         <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">申报材料快捷预设</label>
@@ -84,7 +79,6 @@
       </div>
     </div>
 
-    <!-- Dual Slot Cards -->
     <div class="space-y-3">
       <div class="flex items-center justify-between">
         <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
@@ -97,7 +91,6 @@
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 relative">
-        <!-- Slot 1 -->
         <div id="card-slot-1" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
           <div class="px-4 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
             <div class="flex items-center gap-2">
@@ -139,14 +132,12 @@
           </div>
         </div>
 
-        <!-- Center Swap Button -->
         <div class="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
           <button onclick="swapSlots()" title="互换图一与图二顺序" class="w-10 h-10 rounded-full bg-white border border-slate-300 shadow-md hover:border-emerald-500 text-slate-600 hover:text-emerald-600 flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
           </button>
         </div>
 
-        <!-- Slot 2 -->
         <div id="card-slot-2" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
           <div class="px-4 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
             <div class="flex items-center gap-2">
@@ -189,7 +180,6 @@
         </div>
       </div>
 
-      <!-- Mobile Swap Button -->
       <div class="flex md:hidden justify-center pt-1">
         <button onclick="swapSlots()" class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 shadow-sm flex items-center gap-2">
           <span>互换图一与图二顺序</span>
@@ -197,10 +187,8 @@
       </div>
     </div>
 
-    <!-- Dual Settings Grid (Layout & Compression) -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
       
-      <!-- Layout Settings -->
       <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-5 space-y-4">
         <h3 class="text-sm font-semibold text-slate-800 border-b border-slate-100 pb-3 flex items-center gap-2">
           <span>排版布局设置</span>
@@ -251,7 +239,6 @@
         </div>
       </div>
 
-      <!-- Compression Settings -->
       <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-5 space-y-4">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
           <h3 class="text-sm font-semibold text-slate-800">文件大小与智能压缩控制</h3>
@@ -295,7 +282,6 @@
       </div>
     </div>
 
-    <!-- Quick Access Card when PDF is Ready -->
     <div id="result-banner" class="hidden bg-emerald-50 border border-emerald-300 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
@@ -321,14 +307,12 @@
     </div>
   </main>
 
-  <!-- Footer -->
   <footer class="border-t border-slate-200 bg-white py-4 mt-8">
     <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
       教师资格认定网办材料图片合成与压缩工具 · 适用于四川、合江县及全国中小学/幼儿园教师资格认定 · 本地离线处理无隐私泄露
     </div>
   </footer>
 
-  <!-- Modal: Preview & Download -->
   <div id="previewModal" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
     <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden">
       <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
@@ -370,7 +354,6 @@
     </div>
   </div>
 
-  <!-- Modal: Tips -->
   <div id="tipsModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-xl p-5 space-y-4">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -386,7 +369,6 @@
     </div>
   </div>
 
-  <!-- Pure Client-side JS Script -->
   <script>
     const PRESETS = [
       { id: 'hukou', category: '户籍证明或居住地证明', limit: 500, title: '户口本(户主+本人页)', s1Title: '户口本「户主页」', s1Hint: '含户主姓名及派出所公章', s2Title: '户口本「本人页」', s2Hint: '含申请人姓名与户主关系', mode: 'single-page-stacked', header: '四川省合江县教师资格认定材料 · 户籍证明' },
@@ -551,7 +533,6 @@
       else m.classList.add('hidden');
     }
 
-    // Canvas 预处理引擎
     function processCanvas(slot, scale = 1.0) {
       return new Promise((resolve) => {
         const img = new Image();
@@ -759,7 +740,6 @@
         state.slot2.size = 2400000; state.slot2.width = 1600; state.slot2.height = 1100;
       } else {
         applyPreset('health');
-        // Health
         ctx.fillText('四川省教师资格申请人员体格检查表', 800, 110);
         ctx.font = '20px sans-serif'; ctx.fillStyle = '#475569';
         ctx.fillText('体检编号：HJ-2026-0941 · 受检人：邓*成 · 各常规检查项正常', 800, 150);
