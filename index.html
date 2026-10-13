@@ -10,23 +10,89 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
+
+    html { -webkit-text-size-adjust: 100%; }
+
     body {
       font-family: 'Noto Sans SC', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background:
+        radial-gradient(1100px 560px at 6% -10%, #dbeafe 0%, rgba(219, 234, 254, 0) 60%),
+        radial-gradient(1000px 520px at 108% 4%, #f3e8ff 0%, rgba(243, 232, 255, 0) 55%),
+        radial-gradient(920px 640px at 50% 120%, #d1fae5 0%, rgba(209, 250, 229, 0) 58%),
+        linear-gradient(180deg, #f7f8fc 0%, #eef1f8 100%);
+      background-attachment: fixed;
     }
+
+    /* ---- 玻璃拟态表面 ---- */
+    .glass,
+    .bg-white {
+      background: rgba(255, 255, 255, 0.55) !important;
+      backdrop-filter: blur(18px) saturate(1.6);
+      -webkit-backdrop-filter: blur(18px) saturate(1.6);
+      border-color: rgba(255, 255, 255, 0.7) !important;
+      box-shadow: 0 14px 40px -20px rgba(15, 23, 42, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
+    }
+
+    header {
+      background: rgba(255, 255, 255, 0.58) !important;
+      backdrop-filter: blur(20px) saturate(1.8);
+      -webkit-backdrop-filter: blur(20px) saturate(1.8);
+      border-color: rgba(255, 255, 255, 0.6) !important;
+    }
+
+    main .bg-amber-50\/80,
+    main .bg-amber-50 { background: rgba(255, 251, 235, 0.6) !important; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+    main .bg-emerald-50 { background: rgba(236, 253, 245, 0.6) !important; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+    main .bg-slate-50 { background: rgba(248, 250, 252, 0.5) !important; }
+    main .bg-slate-100 { background: rgba(241, 245, 249, 0.55) !important; }
+
+    main input[type="text"],
+    main input[type="number"],
+    main select {
+      background: rgba(255, 255, 255, 0.65) !important;
+      border-color: rgba(148, 163, 184, 0.32) !important;
+    }
+
+    /* ---- 底部居中导航 ---- */
+    .glass-nav {
+      background: rgba(255, 255, 255, 0.55);
+      backdrop-filter: blur(22px) saturate(1.8);
+      -webkit-backdrop-filter: blur(22px) saturate(1.8);
+      border: 1px solid rgba(255, 255, 255, 0.75);
+      box-shadow: 0 12px 40px -12px rgba(15, 23, 42, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+
     .tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.55rem 1.15rem;
+      border-radius: 9999px;
+      font-size: 0.8125rem;
+      font-weight: 600;
       color: #64748b;
-      border-bottom-color: transparent;
+      cursor: pointer;
+      transition: color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
     }
-    .tab-btn:hover {
-      color: #0f172a;
-    }
+    .tab-btn:hover { color: #0f172a; background: rgba(255, 255, 255, 0.55); }
     .tab-btn.active {
-      color: #059669;
-      border-bottom-color: #059669;
+      color: #065f46;
+      background: rgba(16, 185, 129, 0.16);
+      box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.28);
     }
+    .tab-btn svg { width: 1rem; height: 1rem; }
+
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(100, 116, 139, 0.32);
+      border-radius: 9999px;
+      border: 2px solid transparent;
+      background-clip: padding-box;
+    }
+    ::-webkit-scrollbar-track { background: transparent; }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-900 antialiased min-h-screen flex flex-col selection:bg-emerald-500 selection:text-white">
+<body class="text-slate-900 antialiased min-h-screen flex flex-col selection:bg-emerald-500 selection:text-white">
 
   <header class="border-b border-slate-200 bg-white/95 backdrop-blur sticky top-0 z-30">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -42,15 +108,24 @@
     </div>
   </header>
 
-  <nav class="border-b border-slate-200 bg-white sticky top-16 z-20">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex gap-1">
-      <button data-tab="tools" class="tab-btn px-5 py-3 text-sm font-semibold border-b-2 -mb-px cursor-pointer">工具类</button>
-      <button data-tab="query" class="tab-btn px-5 py-3 text-sm font-semibold border-b-2 -mb-px cursor-pointer">查询类</button>
-      <button data-tab="oil" class="tab-btn px-5 py-3 text-sm font-semibold border-b-2 -mb-px cursor-pointer">今日油价</button>
+  <nav class="fixed bottom-4 left-0 right-0 z-40 flex justify-center px-4 pointer-events-none">
+    <div class="glass-nav pointer-events-auto flex items-center gap-1 p-1.5 rounded-full">
+      <button data-tab="tools" class="tab-btn" title="工具类">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        <span>工具类</span>
+      </button>
+      <button data-tab="query" class="tab-btn" title="金价查询">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3v18h18M8 17v-4M13 17V9M18 17v-7"/></svg>
+        <span>查询类</span>
+      </button>
+      <button data-tab="oil" class="tab-btn" title="今日油价">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3s6 6.5 6 11a6 6 0 11-12 0c0-4.5 6-11 6-11z"/></svg>
+        <span>今日油价</span>
+      </button>
     </div>
   </nav>
 
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-28 flex-1 w-full">
     <div id="tab-tools" class="space-y-6">
 
     <div class="flex flex-wrap items-center gap-2">
@@ -532,7 +607,7 @@
     </div>
   </main>
 
-  <footer class="border-t border-slate-200 bg-white py-4 mt-8">
+  <footer class="border-t border-slate-200 bg-white pt-5 pb-28 mt-8">
     <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
       wwww · 在线工具箱 · 数据均来自公开接口，仅供参考 · 本地处理无隐私泄露
     </div>
@@ -1041,7 +1116,26 @@
       return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
 
+    async function fetchCcbFromJson() {
+      const r = await fetch('data/gold.json?t=' + Date.now());
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const j = await r.json();
+      return (j && j.ccb) ? j.ccb : null;
+    }
+
     async function fetchCcb() {
+      try {
+        const d = await fetchCcbFromJson();
+        if (d) return d;
+      } catch (e) { }
+      try {
+        return await fetchCcbFromProxy();
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function fetchCcbFromProxy() {
       const ts = Date.now();
       const urls = [
         'https://creditcard1.ccb.com/cn/home/news/gjsycj01.xml?t=' + ts,
