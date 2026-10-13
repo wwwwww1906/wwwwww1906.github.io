@@ -35,25 +35,9 @@
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
         </div>
         <div>
-          <h1 class="text-base sm:text-lg font-bold tracking-tight text-slate-900 leading-none">
-            教师资格认定材料 PDF 合成与压缩工具
-          </h1>
-          <p class="text-xs text-slate-500 mt-1 hidden sm:block">
-            严格控制 ≤500KB / ≤1M 限制 · 保证印章字迹清晰 · 本地离线处理
-          </p>
+          <h1 class="text-base sm:text-lg font-bold tracking-tight text-slate-900 leading-none">wwwwww</h1>
+          <p class="text-xs text-slate-500 mt-1 hidden sm:block">在线工具箱 · 材料合成 · 金价 / 油价查询</p>
         </div>
-      </div>
-
-      <div class="flex items-center gap-2 sm:gap-4">
-        <button onclick="loadSample('hukou')" class="text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1">
-          <span>✨ 户口簿示例</span>
-        </button>
-        <button onclick="loadSample('health')" class="text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1">
-          <span>✨ 体检表示例</span>
-        </button>
-        <button onclick="toggleModal('tipsModal', true)" class="text-xs text-slate-600 hover:text-slate-900 px-2 py-1.5 cursor-pointer">
-          避坑指南
-        </button>
       </div>
     </div>
   </header>
@@ -62,11 +46,24 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex gap-1">
       <button data-tab="tools" class="tab-btn px-5 py-3 text-sm font-semibold border-b-2 -mb-px cursor-pointer">工具类</button>
       <button data-tab="query" class="tab-btn px-5 py-3 text-sm font-semibold border-b-2 -mb-px cursor-pointer">查询类</button>
+      <button data-tab="oil" class="tab-btn px-5 py-3 text-sm font-semibold border-b-2 -mb-px cursor-pointer">今日油价</button>
     </div>
   </nav>
 
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
     <div id="tab-tools" class="space-y-6">
+
+    <div class="flex flex-wrap items-center gap-2">
+      <button onclick="loadSample('hukou')" class="text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1">
+        <span>✨ 户口簿示例</span>
+      </button>
+      <button onclick="loadSample('health')" class="text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1">
+        <span>✨ 体检表示例</span>
+      </button>
+      <button onclick="toggleModal('tipsModal', true)" class="text-xs text-slate-600 bg-white hover:text-slate-900 border border-slate-200 px-3 py-1.5 rounded-lg cursor-pointer">
+        避坑指南
+      </button>
+    </div>
 
     <div class="bg-amber-50/80 border border-amber-200 rounded-xl p-4 text-xs sm:text-sm text-slate-800">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
@@ -464,11 +461,80 @@
         </section>
       </div>
     </div>
+
+    <div id="tab-oil" class="hidden space-y-6">
+
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+            今日油价
+          </h2>
+          <p id="oil-last-update" class="text-xs text-slate-500 mt-1">尚未获取，点击右侧刷新</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <select id="oil-region-select" onchange="renderOilRegion()" class="text-sm px-3 py-2 border border-slate-200 rounded-xl bg-white cursor-pointer"></select>
+          <button id="oil-refresh-btn" onclick="refreshOil()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-sm cursor-pointer flex items-center gap-1.5 disabled:opacity-60">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            刷新
+          </button>
+        </div>
+      </div>
+
+      <section class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-5">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h3 class="text-sm font-semibold text-slate-800"><span id="oil-region-name">--</span> 油价（元/升）</h3>
+          <span id="oil-date" class="text-xs text-slate-400 font-mono">--</span>
+        </div>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
+          <div class="rounded-lg border border-slate-100 bg-slate-50 p-3">
+            <p class="text-xs text-slate-500">92# 汽油</p>
+            <p class="text-xl font-bold text-slate-900 mt-1 font-mono" id="oil-n92">--</p>
+            <p id="oil-n92-change" class="text-[11px] font-mono text-slate-400 mt-0.5">--</p>
+          </div>
+          <div class="rounded-lg border border-slate-100 bg-slate-50 p-3">
+            <p class="text-xs text-slate-500">95# 汽油</p>
+            <p class="text-xl font-bold text-slate-900 mt-1 font-mono" id="oil-n95">--</p>
+            <p id="oil-n95-change" class="text-[11px] font-mono text-slate-400 mt-0.5">--</p>
+          </div>
+          <div class="rounded-lg border border-slate-100 bg-slate-50 p-3">
+            <p class="text-xs text-slate-500">98# 汽油</p>
+            <p class="text-xl font-bold text-slate-900 mt-1 font-mono" id="oil-n98">--</p>
+            <p id="oil-n98-change" class="text-[11px] font-mono text-slate-400 mt-0.5">--</p>
+          </div>
+          <div class="rounded-lg border border-slate-100 bg-slate-50 p-3">
+            <p class="text-xs text-slate-500">0# 柴油</p>
+            <p class="text-xl font-bold text-slate-900 mt-1 font-mono" id="oil-n0">--</p>
+            <p id="oil-n0-change" class="text-[11px] font-mono text-slate-400 mt-0.5">--</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-5">
+        <h3 class="text-sm font-semibold text-slate-800 border-b border-slate-100 pb-3">全国各地区油价（元/升）</h3>
+        <div class="overflow-x-auto mt-2 max-h-[28rem] overflow-y-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-[11px] text-slate-400 text-left sticky top-0 bg-white">
+                <th class="py-1.5 font-medium">地区</th>
+                <th class="py-1.5 font-medium text-right">92#</th>
+                <th class="py-1.5 font-medium text-right">95#</th>
+                <th class="py-1.5 font-medium text-right">98#</th>
+                <th class="py-1.5 font-medium text-right">0# 柴油</th>
+                <th class="py-1.5 font-medium text-right">日期</th>
+              </tr>
+            </thead>
+            <tbody id="oil-region-list" class="text-slate-700"></tbody>
+          </table>
+        </div>
+        <p class="text-[11px] text-slate-400 mt-3">数据来源：v2.xxapi.cn 聚合接口，仅供参考</p>
+      </section>
+    </div>
   </main>
 
   <footer class="border-t border-slate-200 bg-white py-4 mt-8">
     <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
-      教师资格认定网办材料图片合成与压缩工具 · 适用于四川、合江县及全国中小学/幼儿园教师资格认定 · 本地离线处理无隐私泄露
+      wwww · 在线工具箱 · 数据均来自公开接口，仅供参考 · 本地处理无隐私泄露
     </div>
   </footer>
 
@@ -953,7 +1019,9 @@
       });
       document.getElementById('tab-tools').classList.toggle('hidden', tab !== 'tools');
       document.getElementById('tab-query').classList.toggle('hidden', tab !== 'query');
+      document.getElementById('tab-oil').classList.toggle('hidden', tab !== 'oil');
       if (tab === 'query' && !queryLoaded) refreshGold();
+      if (tab === 'oil' && !oilLoaded) refreshOil();
     }
 
     function proxyUrl(u) {
@@ -1113,6 +1181,83 @@
       } catch (e) {
         setText('query-status', '');
         setText('query-last-update', '获取失败，请点击刷新重试');
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    let oilLoaded = false;
+    let oilData = [];
+
+    async function fetchOil() {
+      const r = await fetch('https://v2.xxapi.cn/api/oilPrice');
+      const j = await r.json();
+      return Array.isArray(j && j.data) ? j.data : [];
+    }
+
+    function fmtOil(v) {
+      return (v === null || v === undefined) ? '--' : Number(v).toFixed(2);
+    }
+
+    function fillOilRegionSelect() {
+      const sel = document.getElementById('oil-region-select');
+      if (!sel) return;
+      sel.innerHTML = oilData.map((x) => '<option value="' + esc(x.regionId) + '">' + esc(x.regionName) + '</option>').join('');
+      const preferred = oilData.find((x) => String(x.regionName).indexOf('四川') >= 0);
+      if (preferred) sel.value = String(preferred.regionId);
+    }
+
+    function renderOilRegion() {
+      const sel = document.getElementById('oil-region-select');
+      if (!sel) return;
+      const item = oilData.find((x) => String(x.regionId) === sel.value) || oilData[0];
+      if (!item) return;
+      setText('oil-region-name', item.regionName);
+      setText('oil-date', item.date);
+      const fill = (id, val, chg) => {
+        setText(id, fmtOil(val));
+        const c = document.getElementById(id + '-change');
+        if (c) {
+          const n = parseFloat(chg);
+          c.innerText = isNaN(n) ? '' : (n === 0 ? '持平' : (n > 0 ? '↑ +' : '↓ ') + n.toFixed(2));
+          c.className = 'text-[11px] font-mono mt-0.5 ' + (n > 0 ? 'text-rose-500' : n < 0 ? 'text-emerald-600' : 'text-slate-400');
+        }
+      };
+      fill('oil-n92', item.n92, item.n92Change);
+      fill('oil-n95', item.n95, item.n95Change);
+      fill('oil-n98', item.n98, item.n98Change);
+      fill('oil-n0', item.n0, item.n0Change);
+    }
+
+    function renderOilTable() {
+      const rows = oilData.map((x) =>
+        '<tr class="border-t border-slate-100"><td class="py-1.5">' + esc(x.regionName) + '</td>' +
+        '<td class="py-1.5 text-right font-mono">' + fmtOil(x.n92) + '</td>' +
+        '<td class="py-1.5 text-right font-mono">' + fmtOil(x.n95) + '</td>' +
+        '<td class="py-1.5 text-right font-mono">' + fmtOil(x.n98) + '</td>' +
+        '<td class="py-1.5 text-right font-mono">' + fmtOil(x.n0) + '</td>' +
+        '<td class="py-1.5 text-right text-xs text-slate-400 font-mono">' + esc(x.date) + '</td></tr>'
+      );
+      renderRows('oil-region-list', rows, 6);
+    }
+
+    async function refreshOil() {
+      oilLoaded = true;
+      const btn = document.getElementById('oil-refresh-btn');
+      if (btn) btn.disabled = true;
+      setText('oil-last-update', '正在获取...');
+      try {
+        oilData = await fetchOil();
+        if (oilData.length) {
+          fillOilRegionSelect();
+          renderOilRegion();
+          renderOilTable();
+          setText('oil-last-update', '更新于 ' + fmtTime());
+        } else {
+          setText('oil-last-update', '获取失败，请点击刷新重试');
+        }
+      } catch (e) {
+        setText('oil-last-update', '获取失败，请点击刷新重试');
       } finally {
         if (btn) btn.disabled = false;
       }
