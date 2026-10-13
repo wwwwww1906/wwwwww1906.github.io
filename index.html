@@ -114,9 +114,9 @@
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
         <span>工具类</span>
       </button>
-      <button data-tab="query" class="tab-btn" title="金价查询">
+      <button data-tab="query" class="tab-btn" title="今日金价">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3v18h18M8 17v-4M13 17V9M18 17v-7"/></svg>
-        <span>查询类</span>
+        <span>今日金价</span>
       </button>
       <button data-tab="oil" class="tab-btn" title="今日油价">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3s6 6.5 6 11a6 6 0 11-12 0c0-4.5 6-11 6-11z"/></svg>
@@ -425,12 +425,12 @@
 
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
           <div class="rounded-lg border border-slate-100 bg-slate-50 p-3">
-            <p class="text-xs text-slate-500">建行金 · 银行卖出价</p>
-            <p class="text-xl font-bold text-rose-600 mt-1 font-mono"><span id="ccb-jhj-sell">--</span><span class="text-xs text-slate-400 ml-1">元/克</span></p>
+            <p class="text-xs text-slate-500">建行金 · 买入价</p>
+            <p class="text-xl font-bold text-emerald-600 mt-1 font-mono"><span id="ccb-jhj-buy">--</span><span class="text-xs text-slate-400 ml-1">元/克</span></p>
           </div>
           <div class="rounded-lg border border-slate-100 bg-slate-50 p-3">
-            <p class="text-xs text-slate-500">建行金 · 银行买入价</p>
-            <p class="text-xl font-bold text-emerald-600 mt-1 font-mono"><span id="ccb-jhj-buy">--</span><span class="text-xs text-slate-400 ml-1">元/克</span></p>
+            <p class="text-xs text-slate-500">建行金 · 卖出价</p>
+            <p class="text-xl font-bold text-rose-600 mt-1 font-mono"><span id="ccb-jhj-sell">--</span><span class="text-xs text-slate-400 ml-1">元/克</span></p>
           </div>
           <div class="rounded-lg border border-slate-100 bg-slate-50 p-3">
             <p class="text-xs text-slate-500">积存金 · 买入价</p>
@@ -1200,8 +1200,8 @@
 
     function renderCcb(ccb) {
       if (!ccb) return;
-      setText('ccb-jhj-sell', ccb.jhjSell);
-      setText('ccb-jhj-buy', ccb.jhjBuy);
+      setText('ccb-jhj-buy', ccb.jhjSell);
+      setText('ccb-jhj-sell', ccb.jhjBuy);
       setText('ccb-icj-buy', ccb.icjBuy);
       setText('ccb-icj-sell', ccb.icjSell);
       setText('ccb-time', ccb.time);
