@@ -129,12 +129,6 @@
     <div id="tab-tools" class="space-y-6">
 
     <div class="flex flex-wrap items-center gap-2">
-      <button onclick="loadSample('hukou')" class="text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1">
-        <span>✨ 户口簿示例</span>
-      </button>
-      <button onclick="loadSample('health')" class="text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1">
-        <span>✨ 体检表示例</span>
-      </button>
       <button onclick="toggleModal('tipsModal', true)" class="text-xs text-slate-600 bg-white hover:text-slate-900 border border-slate-200 px-3 py-1.5 rounded-lg cursor-pointer">
         避坑指南
       </button>
@@ -426,11 +420,11 @@
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
           <div class="rounded-lg border border-slate-100 bg-slate-50 p-3">
             <p class="text-xs text-slate-500">建行金 · 买入价</p>
-            <p class="text-xl font-bold text-emerald-600 mt-1 font-mono"><span id="ccb-jhj-buy">--</span><span class="text-xs text-slate-400 ml-1">元/克</span></p>
+            <p class="text-xl font-bold text-rose-600 mt-1 font-mono"><span id="ccb-jhj-buy">--</span><span class="text-xs text-slate-400 ml-1">元/克</span></p>
           </div>
           <div class="rounded-lg border border-slate-100 bg-slate-50 p-3">
             <p class="text-xs text-slate-500">建行金 · 卖出价</p>
-            <p class="text-xl font-bold text-rose-600 mt-1 font-mono"><span id="ccb-jhj-sell">--</span><span class="text-xs text-slate-400 ml-1">元/克</span></p>
+            <p class="text-xl font-bold text-emerald-600 mt-1 font-mono"><span id="ccb-jhj-sell">--</span><span class="text-xs text-slate-400 ml-1">元/克</span></p>
           </div>
           <div class="rounded-lg border border-slate-100 bg-slate-50 p-3">
             <p class="text-xs text-slate-500">积存金 · 买入价</p>
@@ -696,7 +690,7 @@
     function initPresets() {
       const container = document.getElementById('presetButtons');
       container.innerHTML = PRESETS.map(p => `
-        <button onclick="applyPreset('${p.id}')" id="preset-${p.id}" class="p-3 text-left rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${state.presetId === p.id ? 'border-emerald-600 bg-emerald-50/60 ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white hover:bg-slate-50'}">
+        <button onclick="selectPreset('${p.id}')" id="preset-${p.id}" class="p-3 text-left rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${state.presetId === p.id ? 'border-emerald-600 bg-emerald-50/60 ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white hover:bg-slate-50'}">
           <div class="flex items-center justify-between mb-1">
             <span class="text-xs font-semibold text-slate-900">${p.category}</span>
             <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${p.limit<=500?'text-red-700 bg-red-50':'text-amber-800 bg-amber-50'}">限${p.limit>=1024?'1M':p.limit+'Kb'}</span>
@@ -704,6 +698,14 @@
           <p class="text-xs text-slate-600 font-medium">${p.title}</p>
         </button>
       `).join('');
+    }
+
+    function selectPreset(id) {
+      if (id === 'hukou' || id === 'health') {
+        loadSample(id);
+      } else {
+        applyPreset(id);
+      }
     }
 
     function applyPreset(id) {
@@ -1116,45 +1118,28 @@
       return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
 
-    async function fetchCcbFromJson() {
-      const r = await fetch('data/gold.json?t=' + Date.now());
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      const j = await r.json();
-      return (j && j.ccb) ? j.ccb : null;
+    function extractXmlBlock(s) {
+      const root = '<ReferencePriceSettlements>';
+      const close = '</ReferencePriceSettlements>';
+      const start = s.indexOf(root);
+      const end = s.lastIndexOf(close);
+      if (start >= 0 && end > start) return s.slice(start, end + close.length);
+      const alt = s.indexOf('<ReferencePriceSettlement ');
+      return alt >= 0 ? s.slice(alt) : s;
     }
 
-    async function fetchCcb() {
-      try {
-        const d = await fetchCcbFromJson();
-        if (d) return d;
-      } catch (e) { }
-      try {
-        return await fetchCcbFromProxy();
-      } catch (e) {
-        return null;
-      }
-    }
-
-    async function fetchCcbFromProxy() {
-      const ts = Date.now();
-      const urls = [
-        'https://creditcard1.ccb.com/cn/home/news/gjsycj01.xml?t=' + ts,
-        'https://creditcard3.ccb.com/cn/home/news/gjshjjc01.xml?t=' + ts,
-        'https://creditcard3.ccb.com/cn/home/news/gjsdlj01.xml?t=' + ts
-      ];
-      const res = await Promise.allSettled(urls.map((u) => fetch(proxyUrl(u)).then((r) => r.text())));
+    function parseCcbXml(c1, c2, c3) {
       const parser = new DOMParser();
       const out = { jhjSell: '--', jhjBuy: '--', icjBuy: '--', icjSell: '--', time: '--', au: null };
-
-      if (res[0].status === 'fulfilled') {
-        const e = parser.parseFromString(res[0].value, 'text/xml').querySelector('ReferencePriceSettlement');
+      if (c1) {
+        const e = parser.parseFromString(c1, 'text/xml').querySelector('ReferencePriceSettlement');
         if (e) {
           out.jhjSell = xmlText(e, 'Br_Sell_Prc');
           out.jhjBuy = xmlText(e, 'Br_Bybk_Prc');
         }
       }
-      if (res[1].status === 'fulfilled') {
-        const e = parser.parseFromString(res[1].value, 'text/xml').querySelector('ReferencePriceSettlement');
+      if (c2) {
+        const e = parser.parseFromString(c2, 'text/xml').querySelector('ReferencePriceSettlement');
         if (e) {
           out.icjBuy = xmlText(e, 'Cst_Buy_Prc');
           out.icjSell = xmlText(e, 'Cst_Sell_Prc');
@@ -1162,8 +1147,8 @@
           if (tms && tms.length >= 19) out.time = tms.substring(11, 19);
         }
       }
-      if (res[2].status === 'fulfilled') {
-        const list = parser.parseFromString(res[2].value, 'text/xml').querySelectorAll('ReferencePriceSettlement');
+      if (c3) {
+        const list = parser.parseFromString(c3, 'text/xml').querySelectorAll('ReferencePriceSettlement');
         for (const el of list) {
           if (xmlText(el, 'GldExg_AR_ECD') === 'Au99.99') {
             const riseDrp = parseFloat(xmlText(el, 'RsDrp_Val'));
@@ -1185,6 +1170,66 @@
         }
       }
       return out;
+    }
+
+    function validCcb(d) {
+      return !!(d && d.au && d.jhjSell !== '--' && d.icjBuy !== '--');
+    }
+
+    function fetchWithTimeout(url, ms) {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), ms);
+      return fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(timer));
+    }
+
+    async function fetchCcbFromJina() {
+      const urls = [
+        'https://creditcard1.ccb.com/cn/home/news/gjsycj01.xml',
+        'https://creditcard3.ccb.com/cn/home/news/gjshjjc01.xml',
+        'https://creditcard3.ccb.com/cn/home/news/gjsdlj01.xml'
+      ];
+      const res = await Promise.allSettled(urls.map((u) => fetchWithTimeout('https://r.jina.ai/' + u, 9000).then((r) => r.text())));
+      const xml = res.map((r) => (r.status === 'fulfilled' ? extractXmlBlock(r.value) : ''));
+      return parseCcbXml(xml[0], xml[1], xml[2]);
+    }
+
+    async function fetchCcbFromJson() {
+      const r = await fetch('data/gold.json?t=' + Date.now());
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const j = await r.json();
+      return (j && j.ccb) ? j.ccb : null;
+    }
+
+    async function fetchCcbFromProxy() {
+      const ts = Date.now();
+      const urls = [
+        'https://creditcard1.ccb.com/cn/home/news/gjsycj01.xml?t=' + ts,
+        'https://creditcard3.ccb.com/cn/home/news/gjshjjc01.xml?t=' + ts,
+        'https://creditcard3.ccb.com/cn/home/news/gjsdlj01.xml?t=' + ts
+      ];
+      const res = await Promise.allSettled(urls.map((u) => fetch(proxyUrl(u)).then((r) => r.text())));
+      return parseCcbXml(
+        res[0].status === 'fulfilled' ? res[0].value : '',
+        res[1].status === 'fulfilled' ? res[1].value : '',
+        res[2].status === 'fulfilled' ? res[2].value : ''
+      );
+    }
+
+    async function fetchCcb() {
+      try {
+        const d = await fetchCcbFromJina();
+        if (validCcb(d)) return d;
+      } catch (e) { }
+      try {
+        const d = await fetchCcbFromJson();
+        if (validCcb(d)) return d;
+      } catch (e) { }
+      try {
+        const d = await fetchCcbFromProxy();
+        return validCcb(d) ? d : null;
+      } catch (e) {
+        return null;
+      }
     }
 
     async function fetchXxapi() {
