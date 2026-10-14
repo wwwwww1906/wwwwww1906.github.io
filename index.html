@@ -1301,6 +1301,10 @@
       'https://cdn.jsdelivr.net/npm/xz-decompress@0.2.3/dist/package/xz-decompress.min.js',
       'https://unpkg.com/xz-decompress@0.2.3/dist/package/xz-decompress.min.js'
     ];
+    const PL_BZ_URLS = [
+      'https://cdn.jsdelivr.net/npm/seek-bzip@2.0.0/+esm',
+      'https://unpkg.com/seek-bzip@2.0.0/+esm'
+    ];
     const PL_MAX_SAFE = BigInt(Number.MAX_SAFE_INTEGER);
 
     function plNum(v, what) {
@@ -1406,7 +1410,7 @@
     function plCheckSupport(part) {
       if (!part.ops.length) return { ok: false, reason: '无操作' };
       for (const op of part.ops) {
-        if (op.type !== 0 && op.type !== 6 && op.type !== 8) {
+        if (op.type !== 0 && op.type !== 1 && op.type !== 6 && op.type !== 8) {
           return { ok: false, reason: '含' + (PL_OP_NAME[op.type] || ('未知(' + op.type + ')')) };
         }
       }
@@ -1555,6 +1559,32 @@
       return new Uint8Array(buf);
     }
 
+    let _plBzPromise = null;
+    function plEnsureBz() {
+      if (!_plBzPromise) {
+        _plBzPromise = (async () => {
+          let lastErr = null;
+          for (const u of PL_BZ_URLS) {
+            try {
+              const m = await import(u);
+              const fn = m && (m.decode || (m.default && m.default.decode));
+              if (typeof fn === 'function') return fn;
+              lastErr = new Error('bzip2 解码库无 decode 导出');
+            } catch (e) { lastErr = e; }
+          }
+          _plBzPromise = null;
+          throw new Error('bzip2 解码库加载失败' + (lastErr ? '：' + (lastErr.message || lastErr) : ''));
+        })();
+      }
+      return _plBzPromise;
+    }
+
+    async function plBzDecode(u8) {
+      const decode = await plEnsureBz();
+      const out = decode(u8);
+      return out instanceof Uint8Array ? out : new Uint8Array(out);
+    }
+
     function plBlobWriter(cap) {
       const chunks = [];
       const Z = new Uint8Array(1024 * 1024);
@@ -1612,6 +1642,10 @@
           const comp = await plReadAt(pblob, dataBase + op.dataOff, op.dataLen);
           const data = await plXzDecode(comp);
           await writer.write(data); pos += data.length; report();
+        } else if (op.type === 1) {
+          const comp = await plReadAt(pblob, dataBase + op.dataOff, op.dataLen);
+          const data = await plBzDecode(comp);
+          await writer.write(data); pos += data.length; report();
         } else if (op.type === 6) {
           let span = 0;
           for (const e of op.exts) span += e[1] * blockSize;
@@ -1663,7 +1697,8 @@
         const m = (r.headers.get('Content-Range') || '').match(/\/(\d+)\s*$/);
         if (m) return parseInt(m[1], 10);
       }
-      throw new Error('远端不支持 Range（HTTP ' + r.status + '），请检查代理与直链');
+      if (!plProxyBase()) throw new Error('未配置代理，浏览器直连通常会被 CORS 拦截或被 OSS 拒绝（HTTP ' + r.status + '），请先部署 Worker 并填写代理设置');
+      throw new Error('远端不支持 Range（HTTP ' + r.status + '），请检查代理与直链是否过期');
     }
     function plHttpBlob(url, size) {
       return {
