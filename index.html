@@ -93,6 +93,7 @@
 
     /* 底部导航 */
     nav.fixed { bottom: max(1rem, env(safe-area-inset-bottom)); }
+    .glass-nav { width: min(100%, 620px); }
     .glass-nav {
       position: relative;
       background: rgba(255, 255, 255, 0.62);
@@ -121,10 +122,12 @@
       align-items: center;
       justify-content: center;
       gap: 4px;
-      width: 62px;
-      padding: 8px 0 6px;
+      flex: 1 1 0;
+      min-width: 0;
+      width: auto;
+      padding: 8px 2px 6px;
       border-radius: 9999px;
-      font-size: 11.5px;
+      font-size: 10px;
       font-weight: 600;
       letter-spacing: 0.01em;
       color: #8e8e93;
@@ -137,9 +140,10 @@
       color: #047857;
       background: rgba(16, 185, 129, 0.14);
     }
-    .tab-btn svg { width: 22px; height: 22px; }
+    .tab-btn svg { width: 18px; height: 18px; flex: none; }
+    .tab-btn span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
     @media (min-width: 640px) {
-      .tab-btn { width: 88px; font-size: 12px; }
+      .tab-btn { font-size: 12px; }
       .tab-btn svg { width: 24px; height: 24px; }
     }
 
@@ -169,7 +173,7 @@
   </header>
 
   <nav class="fixed bottom-4 left-0 right-0 z-40 flex justify-center px-4 pointer-events-none">
-    <div class="glass-nav pointer-events-auto flex items-center gap-1.5 sm:gap-2 p-1.5 rounded-full">
+    <div class="glass-nav pointer-events-auto flex items-center gap-1 sm:gap-1.5 p-1 sm:p-1.5 rounded-full">
       <button data-tab="tools" class="tab-btn" title="工具类">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
         <span>工具类</span>
@@ -189,6 +193,10 @@
       <button data-tab="oil" class="tab-btn" title="今日油价">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3s6 6.5 6 11a6 6 0 11-12 0c0-4.5 6-11 6-11z"/></svg>
         <span>今日油价</span>
+      </button>
+      <button data-tab="payload" class="tab-btn" title="Payload 提取">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/></svg>
+        <span>Payload</span>
       </button>
     </div>
   </nav>
@@ -752,6 +760,57 @@
           </div>
         </section>
     </div>
+
+    <div id="tab-payload" class="hidden space-y-6">
+
+      <div>
+        <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-sky-500"></span>
+          Payload 提取
+        </h2>
+        <p class="text-xs text-slate-500 mt-1">本地解析安卓完整包 payload.bin，按分区解出 .img（仅完整包，增量包不支持）。文件只在浏览器内处理，不上传。</p>
+      </div>
+
+      <section class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-5 space-y-4">
+        <div>
+          <label class="text-xs font-semibold text-slate-700">1 · 选择文件（payload.bin 或完整 OTA zip）</label>
+          <input id="pl-file" type="file" accept=".bin,.zip,application/octet-stream" class="mt-2 block w-full text-sm text-slate-600 file:mr-3 file:px-4 file:py-2 file:rounded-lg file:border-0 file:bg-slate-900 file:text-white file:text-xs file:font-semibold file:cursor-pointer cursor-pointer">
+          <p id="pl-fileinfo" class="text-xs text-slate-500 mt-2">未选择文件</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button id="pl-dir-btn" class="px-4 py-2 bg-white text-slate-800 border border-slate-300 rounded-lg text-xs font-semibold cursor-pointer">选择保存目录</button>
+          <button id="pl-all-btn" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-xs font-semibold cursor-pointer">全部提取</button>
+          <button id="pl-cancel-btn" class="hidden px-4 py-2 bg-white text-rose-700 border border-rose-300 rounded-lg text-xs font-semibold cursor-pointer">取消</button>
+        </div>
+        <div>
+          <div class="flex items-center justify-between gap-3">
+            <span id="pl-status" class="text-xs text-slate-500">就绪</span>
+            <span id="pl-pct" class="text-xs text-slate-400 font-mono"></span>
+          </div>
+          <div class="h-2 rounded-full bg-slate-100 overflow-hidden mt-1.5">
+            <div id="pl-bar" class="h-full bg-emerald-500 rounded-full transition-all" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-[11px] text-slate-400 text-left">
+                <th class="py-1.5 font-medium">分区</th>
+                <th class="py-1.5 font-medium text-right">大小</th>
+                <th class="py-1.5 font-medium text-right">数据量</th>
+                <th class="py-1.5 font-medium text-right">操作数</th>
+                <th class="py-1.5 font-medium">状态</th>
+                <th class="py-1.5 font-medium text-right">提取</th>
+              </tr>
+            </thead>
+            <tbody id="pl-part-list" class="text-slate-700">
+              <tr><td colspan="6" class="py-3 text-center text-xs text-slate-400">请先选择文件</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="text-[11px] text-slate-400">支持 REPLACE / REPLACE_XZ / ZERO；其他操作类型视为增量包而不支持。XZ 解码库首次使用时从 CDN 加载。未选保存目录时将逐个下载（大分区建议用 Chrome/Edge 选目录）。</p>
+      </section>
+    </div>
   </main>
 
   <div id="previewModal" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
@@ -1222,6 +1281,516 @@
     const CCB_PROXY = 'https://api.allorigins.win/raw?url=';
     let queryLoaded = false;
 
+    /* Payload.bin 本地解析与提取（仅完整包） */
+    const PL_OP_NAME = { 0: 'REPLACE', 1: 'REPLACE_BZ', 2: 'MOVE', 3: 'BSDIFF', 4: 'SOURCE_COPY', 5: 'SOURCE_BSDIFF', 6: 'ZERO', 7: 'DISCARD', 8: 'REPLACE_XZ', 9: 'PUFFDIFF', 10: 'BROTLI_BSDIFF', 11: 'ZUCCHINI', 12: 'LZ4DIFF_BSDIFF', 13: 'LZ4DIFF_PUFFDIFF' };
+    const PL_XZ_URLS = [
+      'https://cdn.jsdelivr.net/npm/xz-decompress@0.2.3/dist/package/xz-decompress.min.js',
+      'https://unpkg.com/xz-decompress@0.2.3/dist/package/xz-decompress.min.js'
+    ];
+    const PL_MAX_SAFE = BigInt(Number.MAX_SAFE_INTEGER);
+
+    function plNum(v, what) {
+      if (v > PL_MAX_SAFE) throw new Error(what + '超出安全范围');
+      return Number(v);
+    }
+
+    async function plReadAt(blob, off, len) {
+      if (len <= 0) return new Uint8Array(0);
+      if (off < 0 || off + len > blob.size) throw new Error('读取越界');
+      return new Uint8Array(await blob.slice(off, off + len).arrayBuffer());
+    }
+
+    function plDV(u8) { return new DataView(u8.buffer, u8.byteOffset, u8.byteLength); }
+    function plU16(dv, o) { return dv.getUint16(o, true); }
+    function plU32(dv, o) { return dv.getUint32(o, true); }
+    function plU64n(dv, o) { return plNum(dv.getBigUint64(o, true), 'u64'); }
+
+    function plVarint(u8, p) {
+      let v = 0n, s = 0n;
+      for (let i = 0; i < 10; i++) {
+        if (p >= u8.length) throw new Error('protobuf 越界');
+        const b = u8[p++];
+        v |= BigInt(b & 0x7f) << s;
+        if (!(b & 0x80)) return { v, p };
+        s += 7n;
+      }
+      throw new Error('varint 过长');
+    }
+
+    function plFields(u8, s, e) {
+      const out = [];
+      let p = s;
+      while (p < e) {
+        const k = plVarint(u8, p); p = k.p;
+        const field = Number(k.v >> 3n), wire = Number(k.v & 7n);
+        if (wire === 0) { const r = plVarint(u8, p); out.push({ field, wire, v: r.v }); p = r.p; }
+        else if (wire === 2) {
+          const r = plVarint(u8, p);
+          const len = plNum(r.v, '字段长度');
+          if (r.p + len > e) throw new Error('LEN 越界');
+          out.push({ field, wire, s: r.p, e: r.p + len });
+          p = r.p + len;
+        }
+        else if (wire === 1) { p += 8; }
+        else if (wire === 5) { p += 4; }
+        else throw new Error('未知 wire 类型 ' + wire);
+      }
+      if (p !== e) throw new Error('protobuf 未对齐');
+      return out;
+    }
+
+    function plParseOp(u8, s, e) {
+      let type = -1, off = 0n, len = 0n;
+      const exts = [];
+      for (const f of plFields(u8, s, e)) {
+        if (f.field === 1 && f.wire === 0) type = plNum(f.v, 'op类型');
+        else if (f.field === 2 && f.wire === 0) off = f.v;
+        else if (f.field === 3 && f.wire === 0) len = f.v;
+        else if (f.field === 6 && f.wire === 2) {
+          let st = 0n, nm = 0n;
+          for (const g of plFields(u8, f.s, f.e)) {
+            if (g.field === 1 && g.wire === 0) st = g.v;
+            else if (g.field === 2 && g.wire === 0) nm = g.v;
+          }
+          exts.push([plNum(st, 'extent'), plNum(nm, 'extent')]);
+        }
+      }
+      return { type, dataOff: plNum(off, 'data_offset'), dataLen: plNum(len, 'data_length'), exts };
+    }
+
+    function plParsePart(u8, s, e) {
+      let name = '', size = 0n;
+      const ops = [];
+      for (const f of plFields(u8, s, e)) {
+        if (f.field === 1 && f.wire === 2) name = new TextDecoder().decode(u8.subarray(f.s, f.e));
+        else if (f.field === 7 && f.wire === 2) {
+          for (const g of plFields(u8, f.s, f.e)) {
+            if (g.field === 1 && g.wire === 0) size = g.v;
+          }
+        }
+        else if (f.field === 8 && f.wire === 2) ops.push(plParseOp(u8, f.s, f.e));
+      }
+      return { name, size: plNum(size, '分区大小'), ops };
+    }
+
+    function plParseManifest(u8) {
+      let blockSize = 4096;
+      const parts = [];
+      for (const f of plFields(u8, 0, u8.length)) {
+        if (f.field === 3 && f.wire === 0) blockSize = plNum(f.v, 'block_size');
+        else if (f.field === 13 && f.wire === 2) parts.push(plParsePart(u8, f.s, f.e));
+      }
+      return { blockSize, parts };
+    }
+
+    function plDownSize(part) {
+      if (!part.ops.length) return 0;
+      const first = part.ops[0], last = part.ops[part.ops.length - 1];
+      return (last.dataOff + last.dataLen) - first.dataOff;
+    }
+
+    function plCheckSupport(part) {
+      if (!part.ops.length) return { ok: false, reason: '无操作' };
+      for (const op of part.ops) {
+        if (op.type !== 0 && op.type !== 6 && op.type !== 8) {
+          return { ok: false, reason: '含' + (PL_OP_NAME[op.type] || ('未知(' + op.type + ')')) };
+        }
+      }
+      return { ok: true, reason: '' };
+    }
+
+    async function plFindPayload(blob) {
+      const head = await plReadAt(blob, 0, 4);
+      if (head.length === 4 && head[0] === 0x43 && head[1] === 0x72 && head[2] === 0x41 && head[3] === 0x55) {
+        return { kind: 'bin' };
+      }
+      const size = blob.size;
+      const tailLen = Math.min(66000, size);
+      const tail = await plReadAt(blob, size - tailLen, tailLen);
+      let eocd = -1;
+      for (let i = tail.length - 22; i >= 0; i--) {
+        if (tail[i] === 0x50 && tail[i + 1] === 0x4b && tail[i + 2] === 0x05 && tail[i + 3] === 0x06) { eocd = i; break; }
+      }
+      if (eocd < 0) throw new Error('不是 payload.bin 也不是 zip 包');
+      const dv = plDV(tail);
+      let cdSize = plU32(dv, eocd + 12), cdOff = plU32(dv, eocd + 16);
+      const cdCount = plU16(dv, eocd + 10);
+      if (cdCount === 0xFFFF || cdSize === 0xFFFFFFFF || cdOff === 0xFFFFFFFF) {
+        if (eocd < 20) throw new Error('zip64 定位失败');
+        const loc = plDV(tail.subarray(eocd - 20, eocd));
+        if (!(loc.getUint8(0) === 0x50 && loc.getUint8(1) === 0x4b && loc.getUint8(2) === 0x06 && loc.getUint8(3) === 0x07)) throw new Error('zip64 定位失败');
+        const zoff = plU64n(loc, 8);
+        const zr = plDV(await plReadAt(blob, zoff, 56));
+        cdSize = plU64n(zr, 40); cdOff = plU64n(zr, 48);
+      }
+      const cd = await plReadAt(blob, cdOff, cdSize);
+      const cddv = plDV(cd);
+      const dec = new TextDecoder();
+      let p = 0;
+      while (p + 46 <= cd.length) {
+        if (plU32(cddv, p) !== 0x02014b50) break;
+        const method = plU16(cddv, p + 10);
+        let comp = plU32(cddv, p + 20), uncomp = plU32(cddv, p + 24);
+        const nl = plU16(cddv, p + 28), el = plU16(cddv, p + 30), cl = plU16(cddv, p + 32);
+        let loff = plU32(cddv, p + 42);
+        if (comp === 0xFFFFFFFF || uncomp === 0xFFFFFFFF || loff === 0xFFFFFFFF) {
+          let q = p + 46 + nl;
+          const eEnd = q + el;
+          const needU = uncomp === 0xFFFFFFFF, needC = comp === 0xFFFFFFFF, needL = loff === 0xFFFFFFFF;
+          while (q + 4 <= eEnd) {
+            const id = plU16(cddv, q), sz = plU16(cddv, q + 2);
+            if (id === 1) {
+              let r = q + 4;
+              if (needU) { uncomp = plU64n(cddv, r); r += 8; }
+              if (needC) { comp = plU64n(cddv, r); r += 8; }
+              if (needL) { loff = plU64n(cddv, r); r += 8; }
+              break;
+            }
+            q += 4 + sz;
+          }
+        }
+        const name = dec.decode(cd.subarray(p + 46, p + 46 + nl));
+        if (name === 'payload.bin' || name.endsWith('/payload.bin')) {
+          const lh = await plReadAt(blob, loff, 30);
+          const ldv = plDV(lh);
+          const dataOff = loff + 30 + plU16(ldv, 26) + plU16(ldv, 28);
+          return { kind: 'zip', method, dataOff, compSize: comp };
+        }
+        p = p + 46 + nl + el + cl;
+      }
+      throw new Error('zip 包里没有 payload.bin');
+    }
+
+    async function plInflate(u8) {
+      try {
+        const out = await new Response(new Blob([u8]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer();
+        return new Uint8Array(out);
+      } catch (e) {
+        throw new Error('deflate 解压失败');
+      }
+    }
+
+    async function plPayloadBytes(found, blob) {
+      if (found.kind === 'bin') return { blob, size: blob.size };
+      if (found.method === 0) return { blob: blob.slice(found.dataOff, found.dataOff + found.compSize), size: found.compSize };
+      if (found.method === 8) {
+        const comp = await plReadAt(blob, found.dataOff, found.compSize);
+        const raw = await plInflate(comp);
+        return { blob: new Blob([raw]), size: raw.length };
+      }
+      throw new Error('zip 内 payload 压缩方式不支持(' + found.method + ')');
+    }
+
+    async function plParseHeader(pblob) {
+      const h = await plReadAt(pblob, 0, 24);
+      if (h.length < 24) throw new Error('文件过小');
+      if (!(h[0] === 0x43 && h[1] === 0x72 && h[2] === 0x41 && h[3] === 0x55)) throw new Error('魔数不是 CrAU');
+      const dv = plDV(h);
+      const ver = dv.getBigUint64(4, false);
+      if (ver !== 2n) throw new Error('不支持的版本 ' + ver.toString());
+      const msize = plNum(dv.getBigUint64(12, false), 'manifest');
+      const ssize = dv.getUint32(20, false);
+      const manifest = await plReadAt(pblob, 24, msize);
+      if (manifest.length < msize) throw new Error('manifest 不完整');
+      return { manifest, dataBase: 24 + msize + ssize };
+    }
+
+    async function plParseFile(file) {
+      if (!file || !file.size) throw new Error('空文件');
+      const found = await plFindPayload(file);
+      const pb = await plPayloadBytes(found, file);
+      const parsed = await plParseHeader(pb.blob);
+      const man = plParseManifest(parsed.manifest);
+      if (!man.parts.length) throw new Error('manifest 里没有分区');
+      for (const pt of man.parts) {
+        pt.downSize = plDownSize(pt);
+        pt.check = plCheckSupport(pt);
+      }
+      return { fileName: file.name || 'payload.bin', found, pb, dataBase: parsed.dataBase, blockSize: man.blockSize, parts: man.parts };
+    }
+
+    let _plXzPromise = null;
+    function plEnsureXz() {
+      const g = (typeof window !== 'undefined') ? window['xz-decompress'] : null;
+      if (g && g.XzReadableStream) return Promise.resolve(g.XzReadableStream);
+      if (!_plXzPromise) {
+        _plXzPromise = new Promise((resolve, reject) => {
+          let i = 0;
+          const timer = setTimeout(() => { _plXzPromise = null; reject(new Error('XZ 解码库加载超时')); }, 30000);
+          const next = () => {
+            if (i >= PL_XZ_URLS.length) { clearTimeout(timer); _plXzPromise = null; reject(new Error('XZ 解码库加载失败')); return; }
+            const s = document.createElement('script');
+            s.src = PL_XZ_URLS[i++];
+            s.onload = () => {
+              const lib = window['xz-decompress'];
+              if (lib && lib.XzReadableStream) { clearTimeout(timer); resolve(lib.XzReadableStream); }
+              else next();
+            };
+            s.onerror = next;
+            document.head.appendChild(s);
+          };
+          next();
+        });
+      }
+      return _plXzPromise;
+    }
+
+    async function plXzDecode(u8) {
+      const Xz = await plEnsureXz();
+      const buf = await new Response(new Xz(new Blob([u8]).stream())).arrayBuffer();
+      return new Uint8Array(buf);
+    }
+
+    function plBlobWriter(cap) {
+      const chunks = [];
+      const Z = new Uint8Array(1024 * 1024);
+      let pos = 0;
+      async function fillTo(off) {
+        if (off < pos) throw new Error('回退写入');
+        if (cap && off > cap) throw new Error('超出内存回退上限，请用 Chrome 目录保存');
+        let gap = off - pos;
+        while (gap > 0) {
+          const n = Math.min(Z.length, gap);
+          chunks.push(Z.subarray(0, n));
+          gap -= n; pos += n;
+        }
+      }
+      return {
+        async seek(off) { await fillTo(off); },
+        async write(u8) {
+          if (cap && pos + u8.length > cap) throw new Error('超出内存回退上限，请用 Chrome 目录保存');
+          chunks.push(u8); pos += u8.length;
+        },
+        get written() { return pos; },
+        async padTo(total) { await fillTo(total); },
+        async result() { return new Blob(chunks); },
+        async close() {}
+      };
+    }
+
+    async function plFsWriter(fh) {
+      const w = await fh.createWritable();
+      let pos = 0;
+      return {
+        async seek(off) { await w.seek(off); pos = off; },
+        async write(u8) { await w.write(u8); pos += u8.length; },
+        get written() { return pos; },
+        async padTo(total) { if (pos < total) { await w.truncate(total); pos = total; } },
+        async close() { await w.close(); }
+      };
+    }
+
+    async function plExtractPart(pblob, dataBase, blockSize, part, writer, onProg, signal) {
+      const total = part.size;
+      let pos = 0;
+      const report = () => { if (onProg) onProg(Math.min(pos, total), total); };
+      const Z = new Uint8Array(1024 * 1024);
+      for (const op of part.ops) {
+        if (signal && signal.cancelled) throw new Error('已取消');
+        if (op.exts.length) {
+          const target = op.exts[0][0] * blockSize;
+          if (target !== pos) { await writer.seek(target); pos = target; }
+        }
+        if (op.type === 0) {
+          const data = await plReadAt(pblob, dataBase + op.dataOff, op.dataLen);
+          await writer.write(data); pos += data.length; report();
+        } else if (op.type === 8) {
+          const comp = await plReadAt(pblob, dataBase + op.dataOff, op.dataLen);
+          const data = await plXzDecode(comp);
+          await writer.write(data); pos += data.length; report();
+        } else if (op.type === 6) {
+          let span = 0;
+          for (const e of op.exts) span += e[1] * blockSize;
+          let left = span;
+          while (left > 0) {
+            if (signal && signal.cancelled) throw new Error('已取消');
+            const n = Math.min(Z.length, left);
+            await writer.write(Z.subarray(0, n));
+            left -= n; pos += n; report();
+          }
+        } else {
+          throw new Error('不支持的操作 ' + (PL_OP_NAME[op.type] || ('未知(' + op.type + ')')));
+        }
+      }
+      await writer.padTo(total);
+      await writer.close();
+    }
+
+    function plFmtSize(n) {
+      if (n < 1024) return n + ' B';
+      if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
+      if (n < 1073741824) return (n / 1048576).toFixed(1) + ' MB';
+      return (n / 1073741824).toFixed(2) + ' GB';
+    }
+
+    const plUI = { file: null, parsed: null, dirHandle: null, dirName: '', busy: false, cancel: false };
+    function plSig() { return { get cancelled() { return plUI.cancel; } }; }
+
+    function plSetStatus(t) { const el = document.getElementById('pl-status'); if (el) el.innerText = t; }
+    function plSetProg(a, b) {
+      const bar = document.getElementById('pl-bar'), pct = document.getElementById('pl-pct');
+      const r = b > 0 ? Math.min(100, (a / b) * 100) : 0;
+      if (bar) bar.style.width = r.toFixed(1) + '%';
+      if (pct) pct.innerText = b > 0 ? (plFmtSize(a) + ' / ' + plFmtSize(b)) : '';
+    }
+
+    function plRenderTable() {
+      const tb = document.getElementById('pl-part-list');
+      if (!tb) return;
+      const P = plUI.parsed;
+      if (!P) { tb.innerHTML = '<tr><td colspan="6" class="py-3 text-center text-xs text-slate-400">请先选择文件</td></tr>'; return; }
+      tb.innerHTML = P.parts.map((pt, i) => {
+        const st = pt.check.ok
+          ? '<span class="text-emerald-700">可提取</span>'
+          : '<span class="text-rose-600">不支持(' + esc(pt.check.reason) + ')</span>';
+        const btn = pt.check.ok
+          ? '<button onclick="plExtractOne(' + i + ')" class="text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1 rounded-lg cursor-pointer">提取</button>'
+          : '';
+        return '<tr class="border-t border-slate-100"><td class="py-1.5 font-mono">' + esc(pt.name) + '</td>' +
+          '<td class="py-1.5 text-right font-mono">' + plFmtSize(pt.size) + '</td>' +
+          '<td class="py-1.5 text-right font-mono text-slate-400">' + plFmtSize(pt.downSize) + '</td>' +
+          '<td class="py-1.5 text-right font-mono text-slate-400">' + pt.ops.length + '</td>' +
+          '<td class="py-1.5">' + st + '</td>' +
+          '<td class="py-1.5 text-right">' + btn + '</td></tr>';
+      }).join('');
+    }
+
+    async function plDoParse() {
+      const inp = document.getElementById('pl-file');
+      const f = inp && inp.files && inp.files[0];
+      if (!f) { plSetStatus('请先选择文件'); return; }
+      plUI.file = f; plUI.parsed = null;
+      document.getElementById('pl-fileinfo').innerText = f.name + '（' + plFmtSize(f.size) + '）';
+      plSetStatus('解析中…'); plSetProg(0, 0);
+      try {
+        plUI.parsed = await plParseFile(f);
+        plRenderTable();
+        plSetStatus('已解析：' + plUI.parsed.parts.length + ' 个分区（' + (plUI.parsed.found.kind === 'zip' ? 'OTA zip' : 'payload.bin') + '）');
+      } catch (e) {
+        plUI.parsed = null; plRenderTable();
+        plSetStatus('解析失败：' + (e && e.message || e));
+      }
+    }
+
+    async function plPickWriter() {
+      if (plUI.dirHandle) {
+        try {
+          if ((await plUI.dirHandle.queryPermission({ mode: 'readwrite' })) === 'granted') return { mode: 'dir' };
+          if ((await plUI.dirHandle.requestPermission({ mode: 'readwrite' })) === 'granted') return { mode: 'dir' };
+        } catch (e) {}
+        plUI.dirHandle = null; plUpdateDirBtn();
+      }
+      return { mode: 'blob' };
+    }
+
+    function plUpdateDirBtn() {
+      const b = document.getElementById('pl-dir-btn');
+      if (!b) return;
+      b.classList.toggle('hidden', !window.showDirectoryPicker);
+      if (window.showDirectoryPicker) b.innerText = plUI.dirHandle ? ('目录：' + plUI.dirName) : '选择保存目录';
+    }
+
+    function plDl(blob, fname) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = fname;
+      document.body.appendChild(a); a.click();
+      setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 4000);
+    }
+
+    async function plMakeWriterFor(part) {
+      const wm = await plPickWriter();
+      const fname = part.name + '.img';
+      if (wm.mode === 'dir') {
+        return { writer: await plFsWriter(await plUI.dirHandle.getFileHandle(fname, { create: true })), dlName: null, fname };
+      }
+      if (part.size > 1536 * 1024 * 1024) throw new Error('分区超过 1.5GB，请用 Chrome/Edge 选择保存目录');
+      return { writer: plBlobWriter(1536 * 1024 * 1024), dlName: fname, fname };
+    }
+
+    async function plExtractOne(i, writerOverride) {
+      const P = plUI.parsed;
+      if (!P) { plSetStatus('请先解析文件'); return; }
+      const part = P.parts[i];
+      if (!part || !part.check.ok) return;
+      if (plUI.busy) { plSetStatus('正在提取中，请稍候'); return; }
+      plUI.busy = true; plUI.cancel = false;
+      document.getElementById('pl-cancel-btn').classList.remove('hidden');
+      try {
+        const slot = writerOverride ? { writer: writerOverride, dlName: null } : await plMakeWriterFor(part);
+        const fname = part.name + '.img';
+        plSetStatus('正在提取 ' + part.name + '…');
+        await plExtractPart(P.pb.blob, P.dataBase, P.blockSize, part, slot.writer, (a, b) => plSetProg(a, b), plSig());
+        if (slot.dlName) plDl(await slot.writer.result(), slot.dlName);
+        plSetStatus('完成：' + fname + '（' + plFmtSize(part.size) + '）');
+      } catch (e) {
+        plSetStatus('失败：' + (e && e.message || e));
+      } finally {
+        plUI.busy = false;
+        document.getElementById('pl-cancel-btn').classList.add('hidden');
+        plSetProg(0, 0);
+      }
+    }
+
+    async function plExtractAll() {
+      const P = plUI.parsed;
+      if (!P) { plSetStatus('请先解析文件'); return; }
+      const list = P.parts.map((pt, i) => ({ pt, i })).filter(x => x.pt.check.ok);
+      if (!list.length) { plSetStatus('没有可提取的分区'); return; }
+      if (plUI.busy) { plSetStatus('正在提取中，请稍候'); return; }
+      plUI.busy = true; plUI.cancel = false;
+      document.getElementById('pl-cancel-btn').classList.remove('hidden');
+      try {
+        const total = list.reduce((a, x) => a + x.pt.size, 0);
+        let done = 0, n = 0;
+        for (const x of list) {
+          if (plUI.cancel) throw new Error('已取消');
+          n++;
+          const fname = x.pt.name + '.img';
+          const slot = await plMakeWriterFor(x.pt);
+          plSetStatus('正在提取 ' + x.pt.name + '（' + n + '/' + list.length + '）…');
+          await plExtractPart(P.pb.blob, P.dataBase, P.blockSize, x.pt, slot.writer, (a) => plSetProg(done + a, total), plSig());
+          if (slot.dlName) {
+            plDl(await slot.writer.result(), slot.dlName);
+            await new Promise(r => setTimeout(r, 600));
+          }
+          done += x.pt.size;
+          plSetProg(done, total);
+        }
+        plSetStatus('全部完成：' + list.length + ' 个分区');
+      } catch (e) {
+        plSetStatus('失败：' + (e && e.message || e));
+      } finally {
+        plUI.busy = false;
+        document.getElementById('pl-cancel-btn').classList.add('hidden');
+      }
+    }
+
+    async function plChooseDir() {
+      if (!window.showDirectoryPicker) { plSetStatus('当前浏览器不支持目录保存，将逐个下载'); return; }
+      try {
+        const h = await window.showDirectoryPicker({ mode: 'readwrite' });
+        plUI.dirHandle = h; plUI.dirName = h.name || '';
+        plUpdateDirBtn();
+        plSetStatus('保存目录：' + (plUI.dirName || '已选择'));
+      } catch (e) {}
+    }
+
+    function plCancel() { plUI.cancel = true; plSetStatus('正在取消…'); }
+
+    function plInitPayload() {
+      const inp = document.getElementById('pl-file');
+      if (inp) inp.addEventListener('change', plDoParse);
+      const db = document.getElementById('pl-dir-btn');
+      if (db) db.addEventListener('click', plChooseDir);
+      const ab = document.getElementById('pl-all-btn');
+      if (ab) ab.addEventListener('click', plExtractAll);
+      const cb = document.getElementById('pl-cancel-btn');
+      if (cb) cb.addEventListener('click', plCancel);
+      plUpdateDirBtn();
+      plRenderTable();
+    }
+
     function switchTab(tab) {
       document.querySelectorAll('.tab-btn').forEach((b) => {
         b.classList.toggle('active', b.dataset.tab === tab);
@@ -1231,6 +1800,7 @@
       document.getElementById('tab-clock').classList.toggle('hidden', tab !== 'clock');
       document.getElementById('tab-query').classList.toggle('hidden', tab !== 'query');
       document.getElementById('tab-oil').classList.toggle('hidden', tab !== 'oil');
+      document.getElementById('tab-payload').classList.toggle('hidden', tab !== 'payload');
       if (tab === 'ascii') calcAscii();
       if (tab === 'clock') updateClock();
       if (tab === 'query' && !queryLoaded) refreshGold();
@@ -1776,6 +2346,7 @@
       switchTab('tools');
       calcAscii();
       renderAsciiPresets();
+      plInitPayload();
       updateClock();
       setInterval(updateClock, 1000);
       refreshGold();
