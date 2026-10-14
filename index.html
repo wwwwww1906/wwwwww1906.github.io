@@ -777,6 +777,20 @@
           <input id="pl-file" type="file" accept=".bin,.zip,application/octet-stream" class="mt-2 block w-full text-sm text-slate-600 file:mr-3 file:px-4 file:py-2 file:rounded-lg file:border-0 file:bg-slate-900 file:text-white file:text-xs file:font-semibold file:cursor-pointer cursor-pointer">
           <p id="pl-fileinfo" class="text-xs text-slate-500 mt-2">未选择文件</p>
         </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-700">或粘贴 OTA 直链远程解析（经你的代理中转，只拉取需要的片段）</label>
+          <div class="flex flex-col sm:flex-row gap-2 mt-2">
+            <input id="pl-url" type="url" placeholder="https://…/ota.zip" class="flex-1 text-sm px-3 py-2 border border-slate-200 rounded-lg font-mono">
+            <button id="pl-url-btn" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-xs font-semibold cursor-pointer whitespace-nowrap">加载解析</button>
+          </div>
+          <details class="mt-2">
+            <summary class="text-xs text-slate-400 cursor-pointer select-none">代理设置（Cloudflare Worker 地址与 Token，保存在本机）</summary>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+              <input id="pl-proxy" type="url" placeholder="https://xxx.workers.dev" class="text-sm px-3 py-2 border border-slate-200 rounded-lg font-mono">
+              <input id="pl-token" type="text" placeholder="Token（与 Worker 一致）" autocomplete="off" class="text-sm px-3 py-2 border border-slate-200 rounded-lg font-mono">
+            </div>
+          </details>
+        </div>
         <div class="flex flex-wrap gap-2">
           <button id="pl-dir-btn" class="px-4 py-2 bg-white text-slate-800 border border-slate-300 rounded-lg text-xs font-semibold cursor-pointer">选择保存目录</button>
           <button id="pl-all-btn" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-xs font-semibold cursor-pointer">全部提取</button>
@@ -808,7 +822,7 @@
             </tbody>
           </table>
         </div>
-        <p class="text-[11px] text-slate-400">支持 REPLACE / REPLACE_XZ / ZERO；其他操作类型视为增量包而不支持。XZ 解码库首次使用时从 CDN 加载。未选保存目录时将逐个下载（大分区建议用 Chrome/Edge 选目录）。</p>
+        <p class="text-[11px] text-slate-400">支持 REPLACE / REPLACE_XZ / ZERO；其他操作类型视为增量包而不支持。XZ 解码库首次使用时从 CDN 加载。未选保存目录时将逐个下载（会触发 IDM 等下载工具，强烈建议先点上面的「选择保存目录」）。远程模式要求直链支持 Range 且代理已配置；防盗链链接可能无法使用。</p>
       </section>
     </div>
   </main>
@@ -1623,7 +1637,71 @@
       return (n / 1073741824).toFixed(2) + ' GB';
     }
 
-    const plUI = { file: null, parsed: null, dirHandle: null, dirName: '', busy: false, cancel: false };
+    const plUI = { file: null, parsed: null, dirHandle: null, dirName: '', busy: false, cancel: false, url: '' };
+
+    function plProxyBase() {
+      const el = document.getElementById('pl-proxy');
+      return (el && el.value || '').trim().replace(/\/+$/, '');
+    }
+    function plProxyToken() {
+      const el = document.getElementById('pl-token');
+      return (el && el.value || '').trim();
+    }
+    function plProxyFetch(targetUrl, range) {
+      const base = plProxyBase();
+      const u = base
+        ? base + '?url=' + encodeURIComponent(targetUrl) + '&token=' + encodeURIComponent(plProxyToken())
+        : targetUrl;
+      const headers = {};
+      if (range) headers['Range'] = range;
+      return fetch(u, { headers });
+    }
+    async function plHttpSize(url) {
+      const r = await plProxyFetch(url, 'bytes=0-0');
+      try { await r.arrayBuffer(); } catch (e) {}
+      if (r.status === 206) {
+        const m = (r.headers.get('Content-Range') || '').match(/\/(\d+)\s*$/);
+        if (m) return parseInt(m[1], 10);
+      }
+      throw new Error('远端不支持 Range（HTTP ' + r.status + '），请检查代理与直链');
+    }
+    function plHttpBlob(url, size) {
+      return {
+        size,
+        slice(s, e) {
+          s = Math.max(0, s); e = Math.min(size, e);
+          if (e <= s) return { async arrayBuffer() { return new ArrayBuffer(0); } };
+          const need = e - s;
+          return { async arrayBuffer() {
+            const r = await plProxyFetch(url, 'bytes=' + s + '-' + (e - 1));
+            if (r.status !== 206) throw new Error('远端 Range 失败（HTTP ' + r.status + '）');
+            const raw = new Uint8Array(await r.arrayBuffer());
+            const out = raw.length > need ? raw.slice(0, need) : raw;
+            return out.buffer;
+          } };
+        }
+      };
+    }
+    async function plDoParseUrl() {
+      const inp = document.getElementById('pl-url');
+      const url = (inp && inp.value || '').trim();
+      if (!/^https?:\/\//i.test(url)) { plSetStatus('请粘贴 http(s) 直链'); return; }
+      plUI.url = url; plUI.parsed = null;
+      plSetStatus('正在读取远端…'); plSetProg(0, 0);
+      try {
+        const size = await plHttpSize(url);
+        if (!size || size <= 0) throw new Error('无法获取远端大小');
+        const name = (decodeURIComponent((url.split('?')[0].split('/').pop() || 'remote.bin')).slice(-64) || 'remote.bin');
+        document.getElementById('pl-fileinfo').innerText = name + '（远程，' + plFmtSize(size) + '）';
+        const adapter = Object.assign(plHttpBlob(url, size), { name });
+        plUI.parsed = await plParseFile(adapter);
+        plRenderTable();
+        plSetStatus('已解析：' + plUI.parsed.parts.length + ' 个分区（远程）');
+      } catch (e) {
+        plUI.parsed = null; plRenderTable();
+        plSetStatus('远程解析失败：' + (e && e.message || e));
+      }
+    }
     function plSig() { return { get cancelled() { return plUI.cancel; } }; }
 
     function plSetStatus(t) { const el = document.getElementById('pl-status'); if (el) el.innerText = t; }
@@ -1787,6 +1865,15 @@
       if (ab) ab.addEventListener('click', plExtractAll);
       const cb = document.getElementById('pl-cancel-btn');
       if (cb) cb.addEventListener('click', plCancel);
+      const ub = document.getElementById('pl-url-btn');
+      if (ub) ub.addEventListener('click', plDoParseUrl);
+      const pb = document.getElementById('pl-proxy'), pt = document.getElementById('pl-token');
+      try {
+        if (pb && localStorage.getItem('pl-proxy')) pb.value = localStorage.getItem('pl-proxy');
+        if (pt && localStorage.getItem('pl-token')) pt.value = localStorage.getItem('pl-token');
+      } catch (e) {}
+      if (pb) pb.addEventListener('change', () => { try { localStorage.setItem('pl-proxy', pb.value.trim()); } catch (e) {} });
+      if (pt) pt.addEventListener('change', () => { try { localStorage.setItem('pl-token', pt.value.trim()); } catch (e) {} });
       plUpdateDirBtn();
       plRenderTable();
     }
