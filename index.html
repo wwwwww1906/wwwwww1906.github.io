@@ -121,7 +121,7 @@
       align-items: center;
       justify-content: center;
       gap: 4px;
-      width: 76px;
+      width: 62px;
       padding: 8px 0 6px;
       border-radius: 9999px;
       font-size: 11.5px;
@@ -139,7 +139,7 @@
     }
     .tab-btn svg { width: 22px; height: 22px; }
     @media (min-width: 640px) {
-      .tab-btn { width: 100px; font-size: 12px; }
+      .tab-btn { width: 88px; font-size: 12px; }
       .tab-btn svg { width: 24px; height: 24px; }
     }
 
@@ -177,6 +177,10 @@
       <button data-tab="ascii" class="tab-btn" title="ASCII / 校验 计算">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
         <span>ASCII码</span>
+      </button>
+      <button data-tab="clock" class="tab-btn" title="北京时间 / 倒计时">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>时钟</span>
       </button>
       <button data-tab="query" class="tab-btn" title="今日金价">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3v18h18M8 17v-4M13 17V9M18 17v-7"/></svg>
@@ -460,25 +464,12 @@
         <p class="text-xs text-slate-500 mt-1">输入命令体，自动计算每个字符的 ASCII 码与异或校验，生成 MCU 串口帧（命令体 + 校验 + ~）</p>
       </div>
 
-      <section class="glass rounded-xl border border-white/60 shadow-sm p-4 sm:p-5">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <p class="text-xs text-slate-500 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>北京时间</p>
-            <p id="bj-time" class="text-3xl font-bold font-mono text-slate-900 mt-1 tabular-nums">--:--:--</p>
-          </div>
-          <div class="sm:text-right">
-            <p id="bj-status" class="text-xs text-slate-500">距下班</p>
-            <p id="bj-countdown" class="text-3xl font-bold font-mono text-emerald-600 mt-1 tabular-nums">--:--:--</p>
-          </div>
-        </div>
-      </section>
-
       <section class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-5">
         <div class="flex items-center justify-between">
           <label class="text-xs font-semibold text-slate-700">常用指令预设</label>
           <span class="text-[11px] text-slate-400">点击填入命令体，也可手动输入</span>
         </div>
-        <div id="ascii-presets" class="flex flex-wrap gap-1.5 mt-2"></div>
+        <div id="ascii-presets" class="mt-2 space-y-4"></div>
 
         <label class="text-xs font-semibold text-slate-700 block mt-4">命令体（ASCII 文本）</label>
         <input id="ascii-input" type="text" value="9B" oninput="calcAscii()" placeholder="例如：9B / 1B / 9S10" class="w-full mt-2 text-sm px-3 py-2 border border-slate-200 rounded-lg font-mono">
@@ -518,6 +509,40 @@
             </thead>
             <tbody id="ascii-table" class="text-slate-700"></tbody>
           </table>
+        </div>
+      </section>
+    </div>
+
+    <div id="tab-clock" class="hidden space-y-6">
+
+      <div>
+        <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-sky-500"></span>
+          北京时间 / 倒计时
+        </h2>
+        <p class="text-xs text-slate-500 mt-1">显示当前北京时间（精确到秒）与上下班倒计时（上班 09:00 · 下班 17:30）</p>
+      </div>
+
+      <section class="glass rounded-2xl border border-white/60 shadow-sm p-6 sm:p-8">
+        <div class="text-center">
+          <p class="text-xs text-slate-500">北京时间</p>
+          <p id="bj-time" class="text-5xl sm:text-6xl font-bold font-mono tabular-nums text-slate-900 mt-2">--:--:--</p>
+          <p id="bj-date" class="text-sm text-slate-500 mt-2">--</p>
+        </div>
+
+        <div class="mt-6 pt-6 border-t border-white/60 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="text-center sm:text-left">
+            <p id="bj-status" class="text-xs text-slate-500">距下班</p>
+            <p id="bj-countdown" class="text-4xl font-bold font-mono tabular-nums text-emerald-600 mt-1">--:--:--</p>
+          </div>
+          <div class="text-xs text-slate-500 text-center sm:text-right leading-relaxed">
+            <p>上班 09:00</p>
+            <p>下班 17:30</p>
+          </div>
+        </div>
+
+        <div class="mt-5 h-1.5 rounded-full bg-white/60 overflow-hidden">
+          <div id="bj-progress" class="h-full bg-emerald-500/70 rounded-full transition-all duration-500" style="width:0%"></div>
         </div>
       </section>
     </div>
@@ -1203,9 +1228,11 @@
       });
       document.getElementById('tab-tools').classList.toggle('hidden', tab !== 'tools');
       document.getElementById('tab-ascii').classList.toggle('hidden', tab !== 'ascii');
+      document.getElementById('tab-clock').classList.toggle('hidden', tab !== 'clock');
       document.getElementById('tab-query').classList.toggle('hidden', tab !== 'query');
       document.getElementById('tab-oil').classList.toggle('hidden', tab !== 'oil');
       if (tab === 'ascii') calcAscii();
+      if (tab === 'clock') updateClock();
       if (tab === 'query' && !queryLoaded) refreshGold();
       if (tab === 'oil' && !oilLoaded) refreshOil();
     }
@@ -1239,52 +1266,81 @@
       }
     }
 
-    const ASCII_PRESETS = [
-      { b: '9B', n: '传感器状态' },
-      { b: '9J', n: '振动台/筛网复位' },
-      { b: '9H0', n: '托盘复位/上升' },
-      { b: '9H1', n: '托盘放置/下降' },
-      { b: '9M1', n: '振动启动(可中断)' },
-      { b: '9M0', n: '振动启动(不可中断)' },
-      { b: '9S10', n: '内部天平校准' },
-      { b: '9S11', n: '外部天平校准' },
-      { b: '9S20', n: '天平清零' },
-      { b: '9S30', n: '仅清零' },
-      { b: '9P0', n: '内部天平稳定读数' },
-      { b: '9P1', n: '外部天平稳定读数' },
-      { b: '9L0', n: '内部天平快速读数' },
-      { b: '9L1', n: '外部天平快速读数' },
-      { b: '9J0', n: '振动电机禁能' },
-      { b: '9J1', n: '振动电机使能' },
-      { b: '9AA', n: '地址=默认' },
-      { b: '9A1', n: '地址=1' },
-      { b: '9A2', n: '地址=2' },
-      { b: '9A3', n: '地址=3' },
-      { b: '9A4', n: '地址=4' },
-      { b: '9A5', n: '地址=5' },
-      { b: '1I', n: '单元1·查询自复位' },
-      { b: '1H0', n: '单元1·夹紧回零' },
-      { b: '1H1', n: '单元1·夹紧松开' },
-      { b: '1M1', n: '单元1·旋转启动(可中断)' },
-      { b: '1M0', n: '单元1·旋转启动(不可中断)' },
-      { b: '1J', n: '单元1·旋转复位' },
-      { b: '1B', n: '单元1·传感器状态' },
-      { b: '1T', n: '单元1·软件初始化' },
-      { b: '1F', n: '单元1·参数配置' }
+    const ASCII_GROUPS = [
+      { title: 'CDCA063 / ETV300（默认地址 9AA）', items: [
+        { b: '9B', n: '传感器状态' },
+        { b: '9J', n: '振动台/筛网复位' },
+        { b: '9H0', n: '托盘复位/上升' },
+        { b: '9H1', n: '托盘放置/下降' },
+        { b: '9M1', n: '振动/摆动启动(可中断)' },
+        { b: '9M0', n: '振动/摆动启动(不可中断)' },
+        { b: '9S10', n: '内部天平校准' },
+        { b: '9S11', n: '外部天平校准' },
+        { b: '9S20', n: '天平清零(含托盘下降)' },
+        { b: '9S30', n: '仅清零(自动流程)' },
+        { b: '9P0', n: '内部天平稳定读数' },
+        { b: '9P1', n: '外部天平稳定读数' },
+        { b: '9L0', n: '内部天平快速读数' },
+        { b: '9L1', n: '外部天平快速读数' },
+        { b: '9J0', n: '振动电机禁能' },
+        { b: '9J1', n: '振动电机使能' }
+      ] },
+      { title: 'ETR60（工位 1-5，取上方工位地址）', etr: true, items: [
+        { b: 'I', n: '查询自复位状态' },
+        { b: 'H0', n: '夹紧电机回零' },
+        { b: 'H1', n: '夹紧电机松开' },
+        { b: 'M1', n: '旋转电机启动(可中断)' },
+        { b: 'M0', n: '旋转电机启动(不可中断)' },
+        { b: 'J', n: '旋转电机复位' },
+        { b: 'B', n: '传感器状态' },
+        { b: 'T', n: '软件初始化' },
+        { b: 'F', n: '参数配置' }
+      ] },
+      { title: '地址设置', items: [
+        { b: '9AA', n: '默认地址' },
+        { b: '9A1', n: '地址=1' },
+        { b: '9A2', n: '地址=2' },
+        { b: '9A3', n: '地址=3' },
+        { b: '9A4', n: '地址=4' },
+        { b: '9A5', n: '地址=5' }
+      ] }
     ];
+
+    let asciiUnit = 1;
 
     function renderAsciiPresets() {
       const box = document.getElementById('ascii-presets');
       if (!box) return;
-      box.innerHTML = ASCII_PRESETS.map((p) =>
-        '<button type="button" onclick="setAsciiPreset(\'' + p.b + '\')" title="' + esc(p.n) + '" class="text-xs font-mono px-2.5 py-1 rounded-lg border border-slate-200 bg-white/70 hover:bg-violet-50 hover:border-violet-300 text-slate-700 cursor-pointer transition-colors">' + esc(p.b) + '</button>'
-      ).join('');
+      box.innerHTML = ASCII_GROUPS.map((g) => {
+        const head = '<p class="text-[11px] font-semibold text-slate-500">' + esc(g.title) + '</p>';
+        let unitBar = '';
+        if (g.etr) {
+          unitBar = '<div class="flex items-center gap-1.5 mt-2 mb-2">' +
+            '<span class="text-[11px] text-slate-400">工位地址</span>' +
+            [1, 2, 3, 4, 5].map((u) =>
+              '<button type="button" onclick="setAsciiUnit(' + u + ')" class="text-xs font-mono w-7 h-7 rounded-lg border cursor-pointer transition-colors ' + (asciiUnit === u ? 'border-violet-400 bg-violet-100 text-violet-700' : 'border-slate-200 bg-white/70 text-slate-600 hover:bg-slate-50') + '">' + u + '</button>'
+            ).join('') +
+            '</div>';
+        }
+        const grid = '<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">' + g.items.map((p) =>
+          '<button type="button" onclick="setAsciiPreset(\'' + p.b + '\',' + (g.etr ? 'true' : 'false') + ')" class="flex flex-col items-center justify-center gap-0.5 px-2 py-2.5 rounded-xl border border-slate-200 bg-white/70 hover:bg-violet-50 hover:border-violet-300 cursor-pointer transition-colors">' +
+          '<span class="text-sm font-bold font-mono text-slate-900">' + esc(p.b) + '</span>' +
+          '<span class="text-[11px] text-slate-500 text-center leading-tight">' + esc(p.n) + '</span>' +
+          '</button>'
+        ).join('') + '</div>';
+        return '<div>' + head + unitBar + grid + '</div>';
+      }).join('');
     }
 
-    function setAsciiPreset(b) {
+    function setAsciiUnit(u) {
+      asciiUnit = u;
+      renderAsciiPresets();
+    }
+
+    function setAsciiPreset(b, etr) {
       const el = document.getElementById('ascii-input');
       if (!el) return;
-      el.value = b;
+      el.value = etr ? (asciiUnit + b) : b;
       calcAscii();
     }
 
@@ -1342,6 +1398,13 @@
       const s = diff % 60;
       setText('bj-status', label);
       setText('bj-countdown', pad(h) + ':' + pad(m) + ':' + pad(s));
+      const wd = ['日', '一', '二', '三', '四', '五', '六'][bj.getDay()];
+      setText('bj-date', bj.getFullYear() + '年' + (bj.getMonth() + 1) + '月' + bj.getDate() + '日 星期' + wd);
+      let prog = 0;
+      if (bj >= off) prog = 100;
+      else if (bj >= on) prog = ((bj.getTime() - on.getTime()) / (off.getTime() - on.getTime())) * 100;
+      const pb = document.getElementById('bj-progress');
+      if (pb) pb.style.width = prog.toFixed(1) + '%';
     }
 
     function proxyUrl(u) {
