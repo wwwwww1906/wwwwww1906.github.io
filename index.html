@@ -121,7 +121,7 @@
       align-items: center;
       justify-content: center;
       gap: 4px;
-      width: 84px;
+      width: 76px;
       padding: 8px 0 6px;
       border-radius: 9999px;
       font-size: 11.5px;
@@ -139,7 +139,7 @@
     }
     .tab-btn svg { width: 22px; height: 22px; }
     @media (min-width: 640px) {
-      .tab-btn { width: 108px; font-size: 12px; }
+      .tab-btn { width: 100px; font-size: 12px; }
       .tab-btn svg { width: 24px; height: 24px; }
     }
 
@@ -173,6 +173,10 @@
       <button data-tab="tools" class="tab-btn" title="工具类">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
         <span>工具类</span>
+      </button>
+      <button data-tab="ascii" class="tab-btn" title="ASCII / 校验 计算">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+        <span>ASCII码</span>
       </button>
       <button data-tab="query" class="tab-btn" title="今日金价">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3v18h18M8 17v-4M13 17V9M18 17v-7"/></svg>
@@ -444,6 +448,56 @@
         </button>
       </div>
     </div>
+    </div>
+
+    <div id="tab-ascii" class="hidden space-y-6">
+
+      <div>
+        <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-violet-500"></span>
+          ASCII / 校验 计算
+        </h2>
+        <p class="text-xs text-slate-500 mt-1">输入命令体，自动计算每个字符的 ASCII 码与异或校验，生成 MCU 串口帧（命令体 + 校验 + ~）</p>
+      </div>
+
+      <section class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-5">
+        <label class="text-xs font-semibold text-slate-700">命令体（ASCII 文本）</label>
+        <input id="ascii-input" type="text" value="9B" oninput="calcAscii()" placeholder="例如：9B / 1B / 9S10" class="w-full mt-2 text-sm px-3 py-2 border border-slate-200 rounded-lg font-mono">
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+          <div class="rounded-lg border border-slate-100 bg-slate-50 p-3">
+            <p class="text-xs text-slate-500">ASCII 码（HEX）</p>
+            <p id="ascii-hex" class="text-sm font-bold font-mono text-slate-900 mt-1 break-all">--</p>
+          </div>
+          <div class="rounded-lg border border-slate-100 bg-slate-50 p-3">
+            <p class="text-xs text-slate-500">ASCII 码（DEC）</p>
+            <p id="ascii-dec" class="text-sm font-bold font-mono text-slate-900 mt-1 break-all">--</p>
+          </div>
+          <div class="rounded-lg border border-slate-100 bg-slate-50 p-3">
+            <p class="text-xs text-slate-500">异或校验（XOR）</p>
+            <p id="ascii-xor" class="text-sm font-bold font-mono text-violet-600 mt-1">--</p>
+          </div>
+        </div>
+
+        <div class="mt-4 rounded-lg border border-violet-200 bg-violet-50/60 p-3">
+          <p class="text-xs text-slate-500">完整帧（命令体 + 校验 + ~）</p>
+          <p id="ascii-frame" class="text-base font-bold font-mono text-slate-900 mt-1 break-all">--</p>
+        </div>
+
+        <div class="overflow-x-auto mt-4">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-[11px] text-slate-400 text-left">
+                <th class="py-1.5 font-medium">#</th>
+                <th class="py-1.5 font-medium">字符</th>
+                <th class="py-1.5 font-medium">HEX</th>
+                <th class="py-1.5 font-medium">DEC</th>
+              </tr>
+            </thead>
+            <tbody id="ascii-table" class="text-slate-700"></tbody>
+          </table>
+        </div>
+      </section>
     </div>
 
     <div id="tab-query" class="hidden space-y-6">
@@ -1126,10 +1180,41 @@
         b.classList.toggle('active', b.dataset.tab === tab);
       });
       document.getElementById('tab-tools').classList.toggle('hidden', tab !== 'tools');
+      document.getElementById('tab-ascii').classList.toggle('hidden', tab !== 'ascii');
       document.getElementById('tab-query').classList.toggle('hidden', tab !== 'query');
       document.getElementById('tab-oil').classList.toggle('hidden', tab !== 'oil');
+      if (tab === 'ascii') calcAscii();
       if (tab === 'query' && !queryLoaded) refreshGold();
       if (tab === 'oil' && !oilLoaded) refreshOil();
+    }
+
+    function calcAscii() {
+      const el = document.getElementById('ascii-input');
+      if (!el) return;
+      const s = el.value || '';
+      const bytes = [];
+      for (let i = 0; i < s.length; i++) bytes.push(s.charCodeAt(i) & 0xff);
+      const hexArr = bytes.map((b) => b.toString(16).toUpperCase().padStart(2, '0'));
+      let x = 0;
+      for (const b of bytes) x ^= b;
+      const xor = x.toString(16).toUpperCase().padStart(2, '0');
+      setText('ascii-hex', hexArr.length ? hexArr.join(' ') : '--');
+      setText('ascii-dec', bytes.length ? bytes.join(' ') : '--');
+      setText('ascii-xor', bytes.length ? xor : '--');
+      setText('ascii-frame', bytes.length ? (s + xor + '~') : '--');
+      const tb = document.getElementById('ascii-table');
+      if (tb) {
+        if (!bytes.length) {
+          tb.innerHTML = '<tr><td colspan="4" class="py-3 text-center text-xs text-slate-400">请输入内容</td></tr>';
+        } else {
+          tb.innerHTML = bytes.map((b, i) =>
+            '<tr class="border-t border-slate-100"><td class="py-1.5 text-slate-400 font-mono">' + (i + 1) + '</td>' +
+            '<td class="py-1.5 font-mono">' + esc(s[i]) + '</td>' +
+            '<td class="py-1.5 font-mono">' + hexArr[i] + '</td>' +
+            '<td class="py-1.5 font-mono">' + b + '</td></tr>'
+          ).join('');
+        }
+      }
     }
 
     function proxyUrl(u) {
@@ -1499,6 +1584,7 @@
         b.addEventListener('click', () => switchTab(b.dataset.tab));
       });
       switchTab('tools');
+      calcAscii();
       refreshGold();
       refreshOil();
     });
