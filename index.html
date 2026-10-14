@@ -460,8 +460,27 @@
         <p class="text-xs text-slate-500 mt-1">输入命令体，自动计算每个字符的 ASCII 码与异或校验，生成 MCU 串口帧（命令体 + 校验 + ~）</p>
       </div>
 
+      <section class="glass rounded-xl border border-white/60 shadow-sm p-4 sm:p-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <p class="text-xs text-slate-500 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>北京时间</p>
+            <p id="bj-time" class="text-3xl font-bold font-mono text-slate-900 mt-1 tabular-nums">--:--:--</p>
+          </div>
+          <div class="sm:text-right">
+            <p id="bj-status" class="text-xs text-slate-500">距下班</p>
+            <p id="bj-countdown" class="text-3xl font-bold font-mono text-emerald-600 mt-1 tabular-nums">--:--:--</p>
+          </div>
+        </div>
+      </section>
+
       <section class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-5">
-        <label class="text-xs font-semibold text-slate-700">命令体（ASCII 文本）</label>
+        <div class="flex items-center justify-between">
+          <label class="text-xs font-semibold text-slate-700">常用指令预设</label>
+          <span class="text-[11px] text-slate-400">点击填入命令体，也可手动输入</span>
+        </div>
+        <div id="ascii-presets" class="flex flex-wrap gap-1.5 mt-2"></div>
+
+        <label class="text-xs font-semibold text-slate-700 block mt-4">命令体（ASCII 文本）</label>
         <input id="ascii-input" type="text" value="9B" oninput="calcAscii()" placeholder="例如：9B / 1B / 9S10" class="w-full mt-2 text-sm px-3 py-2 border border-slate-200 rounded-lg font-mono">
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
@@ -480,7 +499,10 @@
         </div>
 
         <div class="mt-4 rounded-lg border border-violet-200 bg-violet-50/60 p-3">
-          <p class="text-xs text-slate-500">完整帧（命令体 + 校验 + ~）</p>
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-xs text-slate-500">完整帧（命令体 + 校验 + ~）</p>
+            <button id="ascii-copy-btn" onclick="copyFrame()" class="shrink-0 text-xs font-semibold text-violet-700 bg-white/70 hover:bg-white border border-violet-200 px-3 py-1 rounded-lg cursor-pointer transition-colors">复制</button>
+          </div>
           <p id="ascii-frame" class="text-base font-bold font-mono text-slate-900 mt-1 break-all">--</p>
         </div>
 
@@ -1217,6 +1239,111 @@
       }
     }
 
+    const ASCII_PRESETS = [
+      { b: '9B', n: '传感器状态' },
+      { b: '9J', n: '振动台/筛网复位' },
+      { b: '9H0', n: '托盘复位/上升' },
+      { b: '9H1', n: '托盘放置/下降' },
+      { b: '9M1', n: '振动启动(可中断)' },
+      { b: '9M0', n: '振动启动(不可中断)' },
+      { b: '9S10', n: '内部天平校准' },
+      { b: '9S11', n: '外部天平校准' },
+      { b: '9S20', n: '天平清零' },
+      { b: '9S30', n: '仅清零' },
+      { b: '9P0', n: '内部天平稳定读数' },
+      { b: '9P1', n: '外部天平稳定读数' },
+      { b: '9L0', n: '内部天平快速读数' },
+      { b: '9L1', n: '外部天平快速读数' },
+      { b: '9J0', n: '振动电机禁能' },
+      { b: '9J1', n: '振动电机使能' },
+      { b: '9AA', n: '地址=默认' },
+      { b: '9A1', n: '地址=1' },
+      { b: '9A2', n: '地址=2' },
+      { b: '9A3', n: '地址=3' },
+      { b: '9A4', n: '地址=4' },
+      { b: '9A5', n: '地址=5' },
+      { b: '1I', n: '单元1·查询自复位' },
+      { b: '1H0', n: '单元1·夹紧回零' },
+      { b: '1H1', n: '单元1·夹紧松开' },
+      { b: '1M1', n: '单元1·旋转启动(可中断)' },
+      { b: '1M0', n: '单元1·旋转启动(不可中断)' },
+      { b: '1J', n: '单元1·旋转复位' },
+      { b: '1B', n: '单元1·传感器状态' },
+      { b: '1T', n: '单元1·软件初始化' },
+      { b: '1F', n: '单元1·参数配置' }
+    ];
+
+    function renderAsciiPresets() {
+      const box = document.getElementById('ascii-presets');
+      if (!box) return;
+      box.innerHTML = ASCII_PRESETS.map((p) =>
+        '<button type="button" onclick="setAsciiPreset(\'' + p.b + '\')" title="' + esc(p.n) + '" class="text-xs font-mono px-2.5 py-1 rounded-lg border border-slate-200 bg-white/70 hover:bg-violet-50 hover:border-violet-300 text-slate-700 cursor-pointer transition-colors">' + esc(p.b) + '</button>'
+      ).join('');
+    }
+
+    function setAsciiPreset(b) {
+      const el = document.getElementById('ascii-input');
+      if (!el) return;
+      el.value = b;
+      calcAscii();
+    }
+
+    function copyFrame() {
+      const el = document.getElementById('ascii-frame');
+      const text = el ? el.innerText.trim() : '';
+      if (!text || text === '--') return;
+      const done = () => {
+        const b = document.getElementById('ascii-copy-btn');
+        if (b) { const old = b.innerText; b.innerText = '已复制'; setTimeout(() => { b.innerText = old; }, 1200); }
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+      } else {
+        fallbackCopy(text, done);
+      }
+    }
+
+    function fallbackCopy(text, done) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) { }
+      document.body.removeChild(ta);
+    }
+
+    function beijingNow() {
+      try {
+        const fmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+        const p = {};
+        for (const part of fmt.formatToParts(new Date())) p[part.type] = part.value;
+        return new Date(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second);
+      } catch (e) {
+        return new Date();
+      }
+    }
+
+    function updateClock() {
+      const bj = beijingNow();
+      const pad = (n) => String(n).padStart(2, '0');
+      setText('bj-time', pad(bj.getHours()) + ':' + pad(bj.getMinutes()) + ':' + pad(bj.getSeconds()));
+      const dayStart = new Date(bj.getFullYear(), bj.getMonth(), bj.getDate());
+      const on = new Date(dayStart.getTime() + 9 * 3600000);
+      const off = new Date(dayStart.getTime() + 17 * 3600000 + 30 * 60000);
+      let target, label;
+      if (bj < on) { target = on; label = '距上班'; }
+      else if (bj < off) { target = off; label = '距下班'; }
+      else { target = new Date(on.getTime() + 86400000); label = '距上班'; }
+      const diff = Math.max(0, Math.floor((target.getTime() - bj.getTime()) / 1000));
+      const h = Math.floor(diff / 3600);
+      const m = Math.floor((diff % 3600) / 60);
+      const s = diff % 60;
+      setText('bj-status', label);
+      setText('bj-countdown', pad(h) + ':' + pad(m) + ':' + pad(s));
+    }
+
     function proxyUrl(u) {
       return CCB_PROXY + encodeURIComponent(u);
     }
@@ -1585,6 +1712,9 @@
       });
       switchTab('tools');
       calcAscii();
+      renderAsciiPresets();
+      updateClock();
+      setInterval(updateClock, 1000);
       refreshGold();
       refreshOil();
     });
