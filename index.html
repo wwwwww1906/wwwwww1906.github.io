@@ -1692,7 +1692,7 @@
     }
     async function plHttpSize(url) {
       const r = await plProxyFetch(url, 'bytes=0-0');
-      try { await r.arrayBuffer(); } catch (e) {}
+      try { if (r.body) await r.body.cancel(); } catch (e) {}
       if (r.status === 206) {
         const m = (r.headers.get('Content-Range') || '').match(/\/(\d+)\s*$/);
         if (m) return parseInt(m[1], 10);
@@ -1700,22 +1700,30 @@
       if (!plProxyBase()) throw new Error('未配置代理，浏览器直连通常会被 CORS 拦截或被 OSS 拒绝（HTTP ' + r.status + '），请先部署 Worker 并填写代理设置');
       throw new Error('远端不支持 Range（HTTP ' + r.status + '），请检查代理与直链是否过期');
     }
-    function plHttpBlob(url, size) {
+    function plHttpRange(url, totalSize, start, length) {
+      const s0 = Math.max(0, start);
+      const e0 = Math.min(totalSize, start + length);
+      const selfSize = Math.max(0, e0 - s0);
       return {
-        size,
+        size: selfSize,
         slice(s, e) {
-          s = Math.max(0, s); e = Math.min(size, e);
-          if (e <= s) return { async arrayBuffer() { return new ArrayBuffer(0); } };
-          const need = e - s;
-          return { async arrayBuffer() {
-            const r = await plProxyFetch(url, 'bytes=' + s + '-' + (e - 1));
-            if (r.status !== 206) throw new Error('远端 Range 失败（HTTP ' + r.status + '）');
-            const raw = new Uint8Array(await r.arrayBuffer());
-            const out = raw.length > need ? raw.slice(0, need) : raw;
-            return out.buffer;
-          } };
+          const ns = Math.max(0, s);
+          const ne = Math.min(selfSize, e);
+          return plHttpRange(url, totalSize, s0 + ns, Math.max(0, ne - ns));
+        },
+        async arrayBuffer() {
+          if (selfSize <= 0) return new ArrayBuffer(0);
+          const r = await plProxyFetch(url, 'bytes=' + s0 + '-' + (e0 - 1));
+          if (r.status !== 206) throw new Error('远端 Range 失败（HTTP ' + r.status + '）');
+          const raw = new Uint8Array(await r.arrayBuffer());
+          const need = e0 - s0;
+          const out = raw.length > need ? raw.slice(0, need) : raw;
+          return out.buffer;
         }
       };
+    }
+    function plHttpBlob(url, size) {
+      return plHttpRange(url, size, 0, size);
     }
     async function plDoParseUrl() {
       const inp = document.getElementById('pl-url');
