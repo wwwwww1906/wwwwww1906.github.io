@@ -784,10 +784,10 @@
             <button id="pl-url-btn" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-xs font-semibold cursor-pointer whitespace-nowrap">加载解析</button>
           </div>
           <details class="mt-2">
-            <summary class="text-xs text-slate-400 cursor-pointer select-none">代理设置（Cloudflare Worker 地址与 Token，保存在本机）</summary>
+            <summary class="text-xs text-slate-400 cursor-pointer select-none">代理设置（Worker 地址保存在本机；Token 留空自动按 UTC 小时生成）</summary>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
               <input id="pl-proxy" type="url" placeholder="https://xxx.workers.dev" class="text-sm px-3 py-2 border border-slate-200 rounded-lg font-mono">
-              <input id="pl-token" type="text" placeholder="Token（与 Worker 一致）" autocomplete="off" class="text-sm px-3 py-2 border border-slate-200 rounded-lg font-mono">
+              <input id="pl-token" type="text" placeholder="留空自动（UTC 小时反序）；也可手动覆盖" autocomplete="off" class="text-sm px-3 py-2 border border-slate-200 rounded-lg font-mono">
             </div>
           </details>
         </div>
@@ -1677,9 +1677,22 @@
       const el = document.getElementById('pl-proxy');
       return (el && el.value || '').trim().replace(/\/+$/, '');
     }
+    function plPad2(n) {
+      return (n < 10 ? '0' : '') + n;
+    }
+    function plUtcHourStamp(d) {
+      return d.getUTCFullYear().toString() +
+        plPad2(d.getUTCMonth() + 1) +
+        plPad2(d.getUTCDate()) +
+        plPad2(d.getUTCHours());
+    }
+    function plAutoToken(date) {
+      return plUtcHourStamp(date || new Date()).split('').reverse().join('');
+    }
     function plProxyToken() {
       const el = document.getElementById('pl-token');
-      return (el && el.value || '').trim();
+      const manual = (el && el.value || '').trim();
+      return manual || plAutoToken();
     }
     function plProxyFetch(targetUrl, range) {
       const base = plProxyBase();
@@ -1913,10 +1926,14 @@
       const pb = document.getElementById('pl-proxy'), pt = document.getElementById('pl-token');
       try {
         if (pb && localStorage.getItem('pl-proxy')) pb.value = localStorage.getItem('pl-proxy');
-        if (pt && localStorage.getItem('pl-token')) pt.value = localStorage.getItem('pl-token');
+        if (pt && localStorage.getItem('pl-token-manual')) pt.value = localStorage.getItem('pl-token-manual');
+        localStorage.removeItem('pl-token');
       } catch (e) {}
       if (pb) pb.addEventListener('change', () => { try { localStorage.setItem('pl-proxy', pb.value.trim()); } catch (e) {} });
-      if (pt) pt.addEventListener('change', () => { try { localStorage.setItem('pl-token', pt.value.trim()); } catch (e) {} });
+      if (pt) pt.addEventListener('change', () => { try {
+        const v = pt.value.trim();
+        if (v) localStorage.setItem('pl-token-manual', v); else localStorage.removeItem('pl-token-manual');
+      } catch (e) {} });
       plUpdateDirBtn();
       plRenderTable();
     }
