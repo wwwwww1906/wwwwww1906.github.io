@@ -1673,9 +1673,9 @@
     const plUI = { file: null, parsed: null, dirHandle: null, dirName: '', busy: false, cancel: false, url: '' };
 
     const PL_PROXY_BASE = 'https://payload.wwwwww1906.workers.dev';
-    // 构建时由 GitHub Actions 用 Secrets.PAYLOAD_PROXY_TOKEN 替换下面的占位符；
-    // 源码里不放真实 Token，页面上也不再展示输入框。
-    const PL_PROXY_TOKEN = '__PAYLOAD_PROXY_TOKEN__';
+    // Token 直接写死（与 Cloudflare Worker 里 TOKEN 常量保持一致）；
+    // 页面上不展示输入框。如需更换，两边一起改。
+    const PL_PROXY_TOKEN = '1999';
     function plProxyBase() {
       return PL_PROXY_BASE;
     }

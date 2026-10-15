@@ -2,9 +2,9 @@
  *
  * Token 直接写死在下面的 TOKEN 常量里（当前 1999）：
  * 1. 把本文件粘贴到 Worker 代码区，Save and deploy
- * 2. 以后改 Token：改这个文件里的值，Cloudflare 和 GitHub 两边一起改
+ * 2. 以后改 Token：这个文件里的值和网页 index.html 里的 PL_PROXY_TOKEN 一起改
  *    - Cloudflare：改完点部署
- *    - GitHub：仓库 Secrets 里改 PAYLOAD_PROXY_TOKEN，下次构建自动生效
+ *    - 网页：改完提交推送即可
  *
  * 页面上不展示任何 Token 输入框。
  *
