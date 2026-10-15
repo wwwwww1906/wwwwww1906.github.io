@@ -528,7 +528,7 @@
           <span class="w-2 h-2 rounded-full bg-sky-500"></span>
           北京时间 / 倒计时
         </h2>
-        <p class="text-xs text-slate-500 mt-1">显示当前北京时间（精确到秒）与上下班倒计时（上班 09:00 · 下班 17:30）</p>
+        <p class="text-xs text-slate-500 mt-1">显示当前北京时间（精确到秒）、UTC 时间与当前代理 Token，附上下班倒计时（上班 09:00 · 下班 17:30）</p>
       </div>
 
       <section class="glass rounded-2xl border border-white/60 shadow-sm p-6 sm:p-8">
@@ -546,6 +546,18 @@
           <div class="text-xs text-slate-500 text-center sm:text-right leading-relaxed">
             <p>上班 09:00</p>
             <p>下班 17:30</p>
+          </div>
+        </div>
+
+        <div class="mt-6 pt-6 border-t border-white/60 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="text-center sm:text-left">
+            <p class="text-xs text-slate-500">UTC 时间</p>
+            <p id="utc-time" class="text-4xl font-bold font-mono tabular-nums text-slate-900 mt-1">--:--:--</p>
+            <p id="utc-date" class="text-xs text-slate-500 mt-1">--</p>
+          </div>
+          <div class="text-center sm:text-right">
+            <p class="text-xs text-slate-500">当前代理 Token（UTC 小时反序）</p>
+            <p id="utc-token" class="text-xl font-bold font-mono tabular-nums text-emerald-700 mt-1">--</p>
           </div>
         </div>
 
@@ -2117,6 +2129,10 @@
       setText('bj-countdown', pad(h) + ':' + pad(m) + ':' + pad(s));
       const wd = ['日', '一', '二', '三', '四', '五', '六'][bj.getDay()];
       setText('bj-date', bj.getFullYear() + '年' + (bj.getMonth() + 1) + '月' + bj.getDate() + '日 星期' + wd);
+      const nowUtc = new Date();
+      setText('utc-time', pad(nowUtc.getUTCHours()) + ':' + pad(nowUtc.getUTCMinutes()) + ':' + pad(nowUtc.getUTCSeconds()));
+      setText('utc-date', nowUtc.getUTCFullYear() + '-' + pad(nowUtc.getUTCMonth() + 1) + '-' + pad(nowUtc.getUTCDate()));
+      setText('utc-token', plAutoToken(nowUtc));
       let prog = 0;
       if (bj >= off) prog = 100;
       else if (bj >= on) prog = ((bj.getTime() - on.getTime()) / (off.getTime() - on.getTime())) * 100;
