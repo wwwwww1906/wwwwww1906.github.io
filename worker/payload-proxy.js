@@ -1,12 +1,12 @@
 /* Cloudflare Worker：Payload 远程提取用的 Range 透传代理（Modules 格式）
  *
- * Token 为固定值，存在 Cloudflare 环境变量里，不出现在代码和页面上：
- * 1. 进 Worker → Settings → Variables and Secrets → Add variable
- *    Name 填 PAYLOAD_PROXY_TOKEN，Value 填 1999（以后改 Token 只改这里）
- * 2. 把本文件粘贴到 Worker 代码区，Save and deploy
+ * Token 直接写死在下面的 TOKEN 常量里（当前 1999）：
+ * 1. 把本文件粘贴到 Worker 代码区，Save and deploy
+ * 2. 以后改 Token：改这个文件里的值，Cloudflare 和 GitHub 两边一起改
+ *    - Cloudflare：改完点部署
+ *    - GitHub：仓库 Secrets 里改 PAYLOAD_PROXY_TOKEN，下次构建自动生效
  *
- * 页面端 Token 由 GitHub Actions 构建时注入（仓库 Secrets.PAYLOAD_PROXY_TOKEN），
- * 网页上不再展示任何 Token 输入框。
+ * 页面上不展示任何 Token 输入框。
  *
  * 调用方式：
  *   GET https://xxx.workers.dev/?url=<OTA直链>&token=<TOKEN>   (可带 Range 头)
@@ -22,15 +22,16 @@ function corsHeaders(extra) {
   }, extra || {});
 }
 
+const TOKEN = '1999';
+
 export default {
-  async fetch(req, env) {
+  async fetch(req) {
     if (req.method === 'OPTIONS') {
       return new Response(null, { headers: corsHeaders() });
     }
-    const expected = (env && env.PAYLOAD_PROXY_TOKEN) || '';
     const u = new URL(req.url);
     const token = u.searchParams.get('token') || '';
-    if (!expected || token !== expected) {
+    if (token !== TOKEN) {
       return new Response('forbidden', { status: 403, headers: corsHeaders() });
     }
     const target = u.searchParams.get('url') || '';
