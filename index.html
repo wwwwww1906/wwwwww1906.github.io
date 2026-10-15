@@ -789,13 +789,6 @@
             <input id="pl-url" type="url" placeholder="https://…/ota.zip" class="flex-1 text-sm px-3 py-2 border border-slate-200 rounded-lg font-mono">
             <button id="pl-url-btn" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-xs font-semibold cursor-pointer whitespace-nowrap">加载解析</button>
           </div>
-          <details class="mt-2">
-            <summary class="text-xs text-slate-400 cursor-pointer select-none">代理设置（Token 保存在本机）</summary>
-            <div class="mt-2">
-              <input id="pl-token" type="text" placeholder="在此填写 Token" autocomplete="off" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg font-mono">
-              <p class="text-xs text-slate-400 mt-1">Token = 时钟 Tab 的 UTC 时间取到小时（YYYYMMDDHH），整体反序；每小时变化</p>
-            </div>
-          </details>
         </div>
         <div class="flex flex-wrap gap-2">
           <button id="pl-dir-btn" class="px-4 py-2 bg-white text-slate-800 border border-slate-300 rounded-lg text-xs font-semibold cursor-pointer">选择保存目录</button>
@@ -1680,17 +1673,16 @@
     const plUI = { file: null, parsed: null, dirHandle: null, dirName: '', busy: false, cancel: false, url: '' };
 
     const PL_PROXY_BASE = 'https://payload.wwwwww1906.workers.dev';
+    // 构建时由 GitHub Actions 用 Secrets.PAYLOAD_PROXY_TOKEN 替换下面的占位符；
+    // 源码里不放真实 Token，页面上也不再展示输入框。
+    const PL_PROXY_TOKEN = '__PAYLOAD_PROXY_TOKEN__';
     function plProxyBase() {
       return PL_PROXY_BASE;
-    }
-    function plProxyToken() {
-      const el = document.getElementById('pl-token');
-      return (el && el.value || '').trim();
     }
     function plProxyFetch(targetUrl, range) {
       const base = plProxyBase();
       const u = base
-        ? base + '?url=' + encodeURIComponent(targetUrl) + '&token=' + encodeURIComponent(plProxyToken())
+        ? base + '?url=' + encodeURIComponent(targetUrl) + '&token=' + encodeURIComponent(PL_PROXY_TOKEN)
         : targetUrl;
       const headers = {};
       if (range) headers['Range'] = range;
@@ -1915,15 +1907,7 @@
       if (cb) cb.addEventListener('click', plCancel);
       const ub = document.getElementById('pl-url-btn');
       if (ub) ub.addEventListener('click', plDoParseUrl);
-      const pt = document.getElementById('pl-token');
-      try {
-        if (pt && localStorage.getItem('pl-token')) pt.value = localStorage.getItem('pl-token');
-        localStorage.removeItem('pl-token-manual');
-      } catch (e) {}
-      if (pt) pt.addEventListener('change', () => { try {
-        const v = pt.value.trim();
-        if (v) localStorage.setItem('pl-token', v); else localStorage.removeItem('pl-token');
-      } catch (e) {} });
+      try { localStorage.removeItem('pl-token'); localStorage.removeItem('pl-token-manual'); } catch (e) {}
       plUpdateDirBtn();
       plRenderTable();
     }
