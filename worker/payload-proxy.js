@@ -10,8 +10,8 @@
  * 部署步骤（免费账号即可）：
  * 1. 注册登录 dash.cloudflare.com → 左侧 Workers & Pages → Create → Create Worker
  * 2. 直接粘贴本文件并 Deploy；不需要再设置静态 TOKEN
- * 3. 记下 Worker 地址 https://xxx.workers.dev，填到网页 Payload 页的「代理设置」里
- *    （Token 留空即可自动按 UTC 小时生成）
+ * 3. 记下 Worker 地址 https://xxx.workers.dev（已写死在网页里，一般不用改），
+ *    Token 在网页 Payload 页手动填写
  *
  * 调用方式：
  *   GET https://xxx.workers.dev/?url=<OTA直链>&token=<UTC小时反序>   (可带 Range 头)
